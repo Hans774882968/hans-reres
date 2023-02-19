@@ -8,6 +8,7 @@ const typeMap = {
   'json': 'text/json',
   'xml': 'text/xml',
   'jpg': 'image/jpeg',
+  'jpeg': 'image/jpeg',
   'gif': 'image/gif',
   'png': 'image/png',
   'webp': 'image/webp'
@@ -20,11 +21,7 @@ export default function getLocalFileUrl (url: string) {
   try {
     content = xhr(url);
   } catch (e) {
-    content = `{
-      "retcode": -404,
-      "message": "Sorry to tell you that the request to local file failed. This may be because the local file does not exist. -- from hans-reres",
-      "data": null
-    }`;
+    content = '{ "retcode": -404, "message": "Sorry to tell you that the request to local file failed. The possible reason is that the local file does not exist. -- from chrome plugin hans-reres", "data": null }';
     type = 'json';
   }
   if (typeof content !== 'string') {
@@ -37,6 +34,11 @@ export default function getLocalFileUrl (url: string) {
         return '\\u' + '00000'.substring(0, 4 - str.length) + str;
       }) : content
   );
+  // TODO：ReRes遗留问题：图片能重定向，但最终的数据无法显示。但我还没有解决。
+  if (['jpg', 'jpeg', 'png'].includes(type)) {
+    const b64result = btoa(content);
+    return `data:${typeMap[type as 'jpg' | 'jpeg' | 'png']};base64,${b64result}`;
+  }
   return `data:${
     type in typeMap ? typeMap[type as keyof typeof typeMap] : typeMap.txt
   };charset=utf-8,${content}`;

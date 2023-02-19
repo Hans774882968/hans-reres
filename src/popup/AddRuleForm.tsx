@@ -5,13 +5,9 @@ import Input from 'antd/es/input';
 import message from 'antd/es/message';
 import Tooltip from 'antd/es/tooltip';
 import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined';
-import { getRedirectType, hansReResMapName, RequestMappingRule } from '../utils';
+import { getRedirectType, RequestMappingRule } from '../utils';
 import { PopupContext } from './PopupApp';
 import './AddRuleForm.css';
-
-interface Props {
-  bg: Window | null
-}
 
 const formLayout = {
   labelCol: { span: 6 },
@@ -26,9 +22,8 @@ const btnLayout = {
   wrapperCol: { offset: 6, span: 16 }
 };
 
-const AddRuleForm: React.FC<Props> = (props) => {
-  const { bg } = props;
-  const { hansReResMap, setHansReResMap, bgWindow } = useContext(PopupContext);
+const AddRuleForm: React.FC = () => {
+  const { hansReResMap, setHansReResMap, bg } = useContext(PopupContext);
   const curRule = {
     req: '.*hub\\.com',
     res: 'https://baidu.com'
@@ -68,7 +63,6 @@ const AddRuleForm: React.FC<Props> = (props) => {
     const newHansReResMap = [...hansReResMap];
     newHansReResMap.push(requestRule);
     setHansReResMap(newHansReResMap);
-    bgWindow.localStorage.setItem(hansReResMapName, JSON.stringify(newHansReResMap));
     if (!bg) {
       message.warning('Save rule to window.localStorage instead💔');
     } else {
@@ -81,7 +75,6 @@ const AddRuleForm: React.FC<Props> = (props) => {
   };
   const clearLocalStorage = () => {
     setHansReResMap([]);
-    bgWindow.localStorage.removeItem(hansReResMapName);
     message.success('Clear success');
   };
 
@@ -128,7 +121,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
             Submit
           </Button>
           <Button className="btn" htmlType="button" onClick={onReset}>
-            Reset
+            Reset Form
           </Button>
           <Button className="btn" htmlType="button" onClick={clearLocalStorage}>
             Clear localStorage

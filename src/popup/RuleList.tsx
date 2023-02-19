@@ -2,13 +2,13 @@ import React, { useContext, useState } from 'react';
 import List from 'antd/es/list';
 import Button from 'antd/es/button';
 import message from 'antd/es/message';
-import { hansReResMapName, RequestMappingRule } from '../utils';
+import { RequestMappingRule } from '../utils';
 import { PopupContext } from './PopupApp';
 import EditRuleForm from './EditRuleForm';
 import './RuleList.css';
 
 const RuleList: React.FC = () => {
-  const { hansReResMap, setHansReResMap, bgWindow } = useContext(PopupContext);
+  const { hansReResMap, setHansReResMap } = useContext(PopupContext);
   const [isDialogVisible, setDialogVisible] = useState(false);
   const [requestRuleToEdit, setRequestRuleToEdit] = useState<RequestMappingRule | null>(null);
 
@@ -24,7 +24,6 @@ const RuleList: React.FC = () => {
       }
     }
     setHansReResMap(newHansReResMap);
-    bgWindow.localStorage.setItem(hansReResMapName, JSON.stringify(newHansReResMap));
     message.success('Rule removed');
   };
 

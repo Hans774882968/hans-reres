@@ -1,28 +1,37 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext } from 'react';
 import AddRuleForm from './AddRuleForm';
 import RuleList from './RuleList';
 import './PopupApp.css';
-import { getHansReResMap, RequestMappingRule } from '../utils';
+import { hansReResMapName, RequestMappingRule } from '../utils';
+import useLocalStorageState from '../hooks/useLocalStorageState';
 
 const bg = chrome?.extension?.getBackgroundPage();
 const bgWindow = bg || window;
 export const PopupContext = createContext<{
   hansReResMap: RequestMappingRule[],
-  setHansReResMap: (rule: RequestMappingRule[]) => void,
-  bgWindow: Window
+  setHansReResMap: (rules: RequestMappingRule[]) => void,
+  bgWindow: Window,
+  bg: Window | null
     }>({
       hansReResMap: [],
-      setHansReResMap: (rules: RequestMappingRule[]) => {},
-      bgWindow
+      setHansReResMap: (rules: RequestMappingRule[]) => {rules;},
+      bgWindow,
+      bg
     });
 
 const PopupApp: React.FC = () => {
-  const [hansReResMap, setHansReResMap] = useState(getHansReResMap(bgWindow));
+  const [hansReResMap, setHansReResMap] = useLocalStorageState<RequestMappingRule[]>(
+    hansReResMapName,
+    {
+      defaultValue: [],
+      localStorageSource: bgWindow
+    }
+  );
 
   return (
     <div className="App">
-      <PopupContext.Provider value={{ hansReResMap, setHansReResMap, bgWindow }}>
-        <AddRuleForm bg={bg} />
+      <PopupContext.Provider value={{ hansReResMap, setHansReResMap, bgWindow, bg }}>
+        <AddRuleForm />
         <RuleList />
       </PopupContext.Provider>
     </div>

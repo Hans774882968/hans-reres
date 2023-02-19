@@ -119,7 +119,7 @@ const config: Config.InitialOptions = {
   // resolver: undefined,
 
   // Automatically restore mock state and implementation before every test
-  // restoreMocks: false,
+  restoreMocks: true,
 
   // The root directory that Jest should scan for tests and modules within
   // rootDir: undefined,
@@ -145,7 +145,7 @@ const config: Config.InitialOptions = {
   // snapshotSerializers: [],
 
   // The test environment that will be used for testing
-  testEnvironment: 'node'
+  testEnvironment: 'jsdom'
 
   // Options that will be passed to the testEnvironment
   // testEnvironmentOptions: {},

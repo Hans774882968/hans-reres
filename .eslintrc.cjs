@@ -19,6 +19,7 @@ module.exports = {
   ],
   'rules': {
     // http://eslint.cn/docs/rules/
+    'no-unused-vars': 'warn',
     'no-console': 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     '@typescript-eslint/no-explicit-any': 'off',
