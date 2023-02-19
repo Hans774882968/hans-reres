@@ -1,0 +1,13 @@
+.App {
+  max-width: 800px;
+  padding: 20px;
+}
+
+.App .response-url-tip {
+  font-size: 18px;
+  padding: 0 12px;
+}
+
+.App .btn {
+  margin-right: 8px;
+}

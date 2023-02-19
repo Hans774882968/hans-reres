@@ -1,0 +1,28 @@
+{
+  "manifest_version": 2,
+  "name": "pkg.name",
+  "version": "pkg.version",
+  "description": "pkg.description",
+  "browser_action": {
+    "default_icon": "assets/icon.png",
+    "default_title": "hans-reres-popup",
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "assets/icon.png",
+    "48": "assets/icon48.png"
+  },
+  "options_page": "options.html",
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": true
+  },
+  "permissions": [
+    "tabs",
+    "webRequest",
+    "webRequestBlocking",
+    "<all_urls>",
+    "unlimitedStorage"
+  ],
+  "homepage_url": "https://github.com/Hans774882968/hans-reres"
+}
