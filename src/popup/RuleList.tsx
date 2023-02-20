@@ -8,7 +8,7 @@ import EditRuleForm from './EditRuleForm';
 import './RuleList.css';
 
 const RuleList: React.FC = () => {
-  const { hansReResMap, setHansReResMap } = useContext(PopupContext);
+  const { hansReResMap, setHansReResMap } = useContext(PopupContext)!;
   const [isDialogVisible, setDialogVisible] = useState(false);
   const [requestRuleToEdit, setRequestRuleToEdit] = useState<RequestMappingRule | null>(null);
 
@@ -43,11 +43,15 @@ const RuleList: React.FC = () => {
           </List.Item>
         )}
       />
-      <EditRuleForm
-        visible={isDialogVisible}
-        requestRule={requestRuleToEdit}
-        setVisibleFunc={(visible: boolean) => setDialogVisible(visible)}
-      />
+      {
+        isDialogVisible ? (
+          <EditRuleForm
+            visible={isDialogVisible}
+            requestRule={requestRuleToEdit}
+            setDialogVisible={(visible: boolean) => setDialogVisible(visible)}
+          />
+        ) : null
+      }
     </>
   );
 };

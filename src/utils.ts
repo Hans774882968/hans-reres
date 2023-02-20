@@ -6,13 +6,6 @@ export const getRedirectType = (res: string) => {
   return 'http';
 };
 
-// export function getHansReResMap (bgWindow: Window): Array<RequestMappingRule> {
-//   const hansReResMapTemp = JSON.parse(
-//     bgWindow.localStorage.getItem(hansReResMapName) || '[]'
-//   );
-//   return Array.isArray(hansReResMapTemp) ? hansReResMapTemp : [];
-// }
-
 export interface RequestMappingRule {
   req: string
   res: string

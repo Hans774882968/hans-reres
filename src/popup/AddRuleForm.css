@@ -2,6 +2,14 @@
   min-width: 700px;
 }
 
+.add-rule-form .request-url-tooltip-icon {
+  margin: 0 8px;
+}
+
+.add-rule-form .response-url-tooltip-icon {
+  margin: 0 8px;
+}
+
 .add-rule-form .redirect-type {
   font-weight: bold;
   font-size: 18px;

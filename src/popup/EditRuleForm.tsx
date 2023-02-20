@@ -1,34 +1,39 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import Modal from 'antd/es/modal';
 import { RequestMappingRule } from '../utils';
+import AddRuleForm from './AddRuleForm';
+import { PopupContext } from './PopupApp';
 
 interface Props {
   visible: boolean
   requestRule: RequestMappingRule | null
-  setVisibleFunc: (visible: boolean) => void
+  setDialogVisible: (visible: boolean) => void
 }
 
 const EditRuleForm: React.FC<Props> = (props) => {
-  const { visible, requestRule, setVisibleFunc } = props;
-  const handleSubmit = () => {
-    setVisibleFunc(false);
+  const { hansReResMap, setHansReResMap } = useContext(PopupContext)!;
+  const { visible, requestRule, setDialogVisible } = props;
+  const handleSubmitSuccess = (newRequestRule: RequestMappingRule) => {
+    const newHansReResMap = [...hansReResMap];
+    for (let i = 0; i < newHansReResMap.length; ++i) {
+      if (newHansReResMap[i] === requestRule) {
+        newHansReResMap.splice(i, 1, newRequestRule);
+      }
+    }
+    setHansReResMap(newHansReResMap);
+    setDialogVisible(false);
   };
-  // TODO
+
   return (
     <Modal
       title="Edit Rule"
       open={visible}
-      okText="Confirm"
-      onCancel={() => setVisibleFunc(false)}
-      onOk={() => handleSubmit()}
+      width={800}
+      okButtonProps={{ style: { display: 'none' }}}
+      cancelButtonProps={{ style: { display: 'none' }}}
+      onCancel={() => setDialogVisible(false)}
     >
-      { requestRule ? (
-        <>
-          <p>{requestRule.req}</p>
-          <p>{requestRule.res}</p>
-        </>
-      ) : null
-      }
+      <AddRuleForm ruleToEdit={requestRule} onFinish={handleSubmitSuccess} />
     </Modal>
   );
 };

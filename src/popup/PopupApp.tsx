@@ -7,17 +7,7 @@ import useLocalStorageState from '../hooks/useLocalStorageState';
 
 const bg = chrome?.extension?.getBackgroundPage();
 const bgWindow = bg || window;
-export const PopupContext = createContext<{
-  hansReResMap: RequestMappingRule[],
-  setHansReResMap: (rules: RequestMappingRule[]) => void,
-  bgWindow: Window,
-  bg: Window | null
-    }>({
-      hansReResMap: [],
-      setHansReResMap: (rules: RequestMappingRule[]) => {rules;},
-      bgWindow,
-      bg
-    });
+export const PopupContext = createContext<{ hansReResMap: RequestMappingRule[], setHansReResMap: (rules: RequestMappingRule[]) => void, bg: Window | null } | null>(null);
 
 const PopupApp: React.FC = () => {
   const [hansReResMap, setHansReResMap] = useLocalStorageState<RequestMappingRule[]>(
@@ -30,8 +20,8 @@ const PopupApp: React.FC = () => {
 
   return (
     <div className="App">
-      <PopupContext.Provider value={{ hansReResMap, setHansReResMap, bgWindow, bg }}>
-        <AddRuleForm />
+      <PopupContext.Provider value={{ hansReResMap, setHansReResMap, bg }}>
+        <AddRuleForm ruleToEdit={null} showClearStorageBtn={true} />
         <RuleList />
       </PopupContext.Provider>
     </div>

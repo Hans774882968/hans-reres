@@ -9,6 +9,12 @@ import { getRedirectType, RequestMappingRule } from '../utils';
 import { PopupContext } from './PopupApp';
 import './AddRuleForm.css';
 
+interface Props {
+  ruleToEdit: RequestMappingRule | null
+  onFinish?: (requestRule: RequestMappingRule) => unknown
+  showClearStorageBtn?: boolean
+}
+
 const formLayout = {
   labelCol: { span: 6 },
   wrapperCol: { span: 16 }
@@ -22,9 +28,13 @@ const btnLayout = {
   wrapperCol: { offset: 6, span: 16 }
 };
 
-const AddRuleForm: React.FC = () => {
-  const { hansReResMap, setHansReResMap, bg } = useContext(PopupContext);
-  const curRule = {
+const redirectTypeIntro = 'Automatically detect the protocol of your response url, such as: http, file.';
+const reqUrlIntro = 'Request URL to redirect. It should be a regex.';
+const respUrlIntro = 'Response URL. It can start with \'file://\' to represent a local file.';
+
+const AddRuleForm: React.FC<Props> = (props) => {
+  const { hansReResMap, setHansReResMap, bg } = useContext(PopupContext)!;
+  const initialRule: RequestMappingRule = props.ruleToEdit || {
     req: '.*hub\\.com',
     res: 'https://baidu.com'
   };
@@ -46,20 +56,16 @@ const AddRuleForm: React.FC = () => {
       }
     ],
     res: [
-      { required: true, message: 'Response url should not be empty' }
+      { required: true, message: 'Response url should not be empty' },
+      { min: 4, message: 'Response url must be at least 4 characters' }
     ]
   };
-  const [curRuleFields, setCurRuleFields] = useState(curRule);
-
-  const redirectTypeIntro = 'Protocol of your response url, such as: http, file';
+  const [curRuleFields, setCurRuleFields] = useState(initialRule);
 
   const onAddRuleFormChange = (addRuleForm: RequestMappingRule) => {
     setCurRuleFields({ ...curRuleFields, ...addRuleForm });
   };
-  const onResponseUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    addRuleForm.setFieldValue('redirectType', e.target.value.substring(0, 4));
-  };
-  const onFinish = (requestRule: RequestMappingRule) => {
+  const onFinish = props.onFinish || ((requestRule: RequestMappingRule) => {
     const newHansReResMap = [...hansReResMap];
     newHansReResMap.push(requestRule);
     setHansReResMap(newHansReResMap);
@@ -68,15 +74,31 @@ const AddRuleForm: React.FC = () => {
     } else {
       message.success('Save Success❤');
     }
-  };
+  });
   const onReset = () => {
-    addRuleForm.setFieldsValue(curRule);
-    onAddRuleFormChange(addRuleForm.getFieldsValue());
+    addRuleForm.setFieldsValue(initialRule);
   };
   const clearLocalStorage = () => {
     setHansReResMap([]);
     message.success('Clear success');
   };
+
+  const reqUrlTooltip = (
+    <>
+      <Tooltip placement="top" title={reqUrlIntro}>
+        <QuestionCircleOutlined className="request-url-tooltip-icon" />
+      </Tooltip>
+      If URL match
+    </>
+  );
+  const respUrlTooltip = (
+    <>
+      <Tooltip placement="top" title={respUrlIntro}>
+        <QuestionCircleOutlined className="response-url-tooltip-icon" />
+      </Tooltip>
+      Response URL
+    </>
+  );
 
   return (
     <div className="add-rule-form">
@@ -84,12 +106,12 @@ const AddRuleForm: React.FC = () => {
         {...formLayout}
         form={addRuleForm}
         name="addRuleForm"
-        initialValues={curRule}
+        initialValues={initialRule}
         onFinish={onFinish}
         onValuesChange={onAddRuleFormChange}
         autoComplete="off"
       >
-        <Form.Item label="If URL match" name="req" rules={rules.req}>
+        <Form.Item label={reqUrlTooltip} name="req" rules={rules.req}>
           <Input
             allowClear
             type="text"
@@ -97,12 +119,11 @@ const AddRuleForm: React.FC = () => {
           />
         </Form.Item>
 
-        <Form.Item label="Response URL" name="res" rules={rules.res}>
+        <Form.Item label={respUrlTooltip} name="res" rules={rules.res}>
           <Input
             allowClear
             type="text"
             placeholder="Input response url"
-            onChange={onResponseUrlChange}
           />
         </Form.Item>
 
@@ -123,9 +144,13 @@ const AddRuleForm: React.FC = () => {
           <Button className="btn" htmlType="button" onClick={onReset}>
             Reset Form
           </Button>
-          <Button className="btn" htmlType="button" onClick={clearLocalStorage}>
-            Clear localStorage
-          </Button>
+          {
+            props.showClearStorageBtn ? (
+              <Button className="btn" htmlType="button" onClick={clearLocalStorage}>
+                Clear localStorage
+              </Button>
+            ) : null
+          }
         </Form.Item>
       </Form>
     </div>
