@@ -1,5 +1,4 @@
-import { hansReResMapName } from './utils';
-import getRedirectUrl from './get-redirect-url';
+import { hansReResMapName, getRedirectUrl } from '../utils';
 
 function getFromLocalStorage () {
   const hansReResMap = window.localStorage.getItem(hansReResMapName);

@@ -1,15 +1,21 @@
-import getRedirectUrl from '../src/background/get-redirect-url';
+import { getRedirectUrl } from '../src/utils';
+import xhr from '../src/xhr';
 
-jest.mock('../src/background/utils', () => {
+jest.mock('../src/xhr', () => {
   return {
-    ...jest.requireActual('../src/background/utils'),
-    xhr () {
+    __esModule: true,
+    default: () => {
       return 'console.log(\'hello world\')\n';
     }
   };
 });
 
 describe('background.ts', () => {
+  it('mock successfully', () => {
+    const result = xhr('file://D:/1.js');
+    expect(result).toBe('console.log(\'hello world\')\n');
+  });
+
   it('res is file protocol', () => {
     const hansReResMap = [
       {
@@ -19,6 +25,17 @@ describe('background.ts', () => {
     ];
     const url = getRedirectUrl('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js', hansReResMap);
     expect(url).toBe('data:text/javascript;charset=utf-8,console.log(\'hello%20world\')%0A');
+  });
+
+  it('rule does not match', () => {
+    const hansReResMap = [
+      {
+        req: 'https://g.csdnimg.cn/side-toolbar/3.4/side-toolbar.js',
+        res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\2.js'
+      }
+    ];
+    const url = getRedirectUrl('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js', hansReResMap);
+    expect(url).toBe('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js');
   });
 
   it('res is http protocol', () => {
