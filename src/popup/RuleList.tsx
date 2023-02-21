@@ -5,7 +5,7 @@ import message from 'antd/es/message';
 import { RequestMappingRule } from '../utils';
 import { PopupContext } from './PopupApp';
 import EditRuleForm from './EditRuleForm';
-import './RuleList.css';
+import styles from './RuleList.module.less';
 
 const RuleList: React.FC = () => {
   const { hansReResMap, setHansReResMap } = useContext(PopupContext)!;
@@ -30,13 +30,13 @@ const RuleList: React.FC = () => {
   return (
     <>
       <List
-        className="rule-list"
+        className={styles['rule-list']}
         itemLayout="horizontal"
         dataSource={hansReResMap}
         renderItem={(requestRule) => (
-          <List.Item className="rule-list-item">
-            <span className="req">{requestRule.req}</span>
-            <div className="btns">
+          <List.Item className={styles['rule-list-item']}>
+            <span className={styles['req']}>{requestRule.req}</span>
+            <div className={styles['btns']}>
               <Button type="primary" onClick={() => showEditDialog(requestRule)}>Edit</Button>
               <Button onClick={() => removeRule(requestRule)}>Remove</Button>
             </div>

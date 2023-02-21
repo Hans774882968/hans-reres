@@ -1,5 +1,4 @@
 import getRedirectUrl from '../src/background/get-redirect-url';
-import expect from 'expect';
 
 jest.mock('../src/background/utils', () => {
   return {

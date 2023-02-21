@@ -7,7 +7,7 @@ import Tooltip from 'antd/es/tooltip';
 import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined';
 import { getRedirectType, RequestMappingRule } from '../utils';
 import { PopupContext } from './PopupApp';
-import './AddRuleForm.css';
+import styles from './AddRuleForm.module.less';
 
 interface Props {
   ruleToEdit: RequestMappingRule | null
@@ -86,7 +86,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
   const reqUrlTooltip = (
     <>
       <Tooltip placement="top" title={reqUrlIntro}>
-        <QuestionCircleOutlined className="request-url-tooltip-icon" />
+        <QuestionCircleOutlined className={styles['request-url-tooltip-icon']} />
       </Tooltip>
       If URL match
     </>
@@ -94,14 +94,14 @@ const AddRuleForm: React.FC<Props> = (props) => {
   const respUrlTooltip = (
     <>
       <Tooltip placement="top" title={respUrlIntro}>
-        <QuestionCircleOutlined className="response-url-tooltip-icon" />
+        <QuestionCircleOutlined className={styles['response-url-tooltip-icon']} />
       </Tooltip>
       Response URL
     </>
   );
 
   return (
-    <div className="add-rule-form">
+    <div className={styles['add-rule-form']}>
       <Form
         {...formLayout}
         form={addRuleForm}
@@ -131,22 +131,22 @@ const AddRuleForm: React.FC<Props> = (props) => {
           {...redirectTypeLayout}
           label="Redirect type"
         >
-          <span className="redirect-type">{getRedirectType(curRuleFields.res)}</span>
+          <span className={styles['redirect-type']}>{getRedirectType(curRuleFields.res)}</span>
           <Tooltip placement="right" title={redirectTypeIntro}>
             <QuestionCircleOutlined />
           </Tooltip>
         </Form.Item>
 
         <Form.Item {...btnLayout}>
-          <Button className="btn" type="primary" htmlType="submit">
+          <Button className={styles['btn']} type="primary" htmlType="submit">
             Submit
           </Button>
-          <Button className="btn" htmlType="button" onClick={onReset}>
+          <Button className={styles['btn']} htmlType="button" onClick={onReset}>
             Reset Form
           </Button>
           {
             props.showClearStorageBtn ? (
-              <Button className="btn" htmlType="button" onClick={clearLocalStorage}>
+              <Button className={styles['btn']} htmlType="button" onClick={clearLocalStorage}>
                 Clear localStorage
               </Button>
             ) : null

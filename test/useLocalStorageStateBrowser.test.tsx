@@ -4,7 +4,6 @@ import superjson from 'superjson';
 import { render, renderHook, act } from '@testing-library/react';
 import React, { useEffect, useLayoutEffect, useMemo } from 'react';
 import useLocalStorageState, { inMemoryData } from '../src/hooks/useLocalStorageState';
-import expect from 'expect';
 // Unfortunately, we can not import lodash on demand
 import * as lodash from 'lodash';
 

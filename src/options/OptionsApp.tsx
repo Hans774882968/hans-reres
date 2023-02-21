@@ -1,4 +1,5 @@
-import './App.css';
+/* eslint-disable react/react-in-jsx-scope */
+import './OptionsApp.module.less';
 
 function OptionsApp () {
   return (

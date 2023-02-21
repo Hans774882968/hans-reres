@@ -1,0 +1,33 @@
+.rule-list {
+  border: 1px solid skyblue;
+
+  .rule-list-item {
+    /* 32px + 2 * 12px */
+    min-height: 56px;
+    position: relative;
+    font-weight: bold;
+
+    /* 这3条属性应该直接作用于text node的parent */
+    .req {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .btns {
+      display: none;
+      position: absolute;
+      /* right should be same with List.Item */
+      right: 24px;
+    }
+  }
+
+  .rule-list-item:hover {
+    background-color: #f5f5f5;
+
+    .btns {
+      display: flex;
+      gap: 16px;
+    }
+  }
+}

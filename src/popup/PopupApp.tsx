@@ -1,7 +1,7 @@
 import React, { createContext } from 'react';
 import AddRuleForm from './AddRuleForm';
 import RuleList from './RuleList';
-import './PopupApp.css';
+import styles from './PopupApp.module.less';
 import { hansReResMapName, RequestMappingRule } from '../utils';
 import useLocalStorageState from '../hooks/useLocalStorageState';
 
@@ -19,7 +19,7 @@ const PopupApp: React.FC = () => {
   );
 
   return (
-    <div className="App">
+    <div className={styles.App}>
       <PopupContext.Provider value={{ hansReResMap, setHansReResMap, bg }}>
         <AddRuleForm ruleToEdit={null} showClearStorageBtn={true} />
         <RuleList />
