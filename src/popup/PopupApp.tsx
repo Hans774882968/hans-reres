@@ -19,7 +19,7 @@ const PopupApp: React.FC = () => {
   );
 
   return (
-    <div className={styles.App}>
+    <div className={styles.app}>
       <PopupContext.Provider value={{ hansReResMap, setHansReResMap, bg }}>
         <AddRuleForm ruleToEdit={null} showClearStorageBtn={true} />
         <RuleList />

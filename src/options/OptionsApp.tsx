@@ -1,9 +1,9 @@
 /* eslint-disable react/react-in-jsx-scope */
-import './OptionsApp.module.less';
+import styles from './OptionsApp.module.less';
 
 function OptionsApp () {
   return (
-    <div className="App">
+    <div className={styles.app}>
       <h1>Options</h1>
     </div>
   );

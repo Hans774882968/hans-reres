@@ -2,9 +2,10 @@
   border: 1px solid skyblue;
 
   .rule-list-item {
+    position: relative;
+
     /* 32px + 2 * 12px */
     min-height: 56px;
-    position: relative;
     font-weight: bold;
 
     /* 这3条属性应该直接作用于text node的parent */
@@ -15,10 +16,11 @@
     }
 
     .btns {
-      display: none;
       position: absolute;
+
       /* right should be same with List.Item */
       right: 24px;
+      display: none;
     }
   }
 
