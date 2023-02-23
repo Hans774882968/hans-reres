@@ -8,11 +8,17 @@
     min-height: 56px;
     font-weight: bold;
 
-    /* 这3条属性应该直接作用于text node的parent */
-    .req {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    .rule-item-container {
+      cursor: pointer;
+      display: flex;
+      gap: 8px;
+
+      /* 这3条属性应该直接作用于text node的parent */
+      .req {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
     }
 
     .btns {

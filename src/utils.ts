@@ -5,6 +5,7 @@ export const hansReResMapName = 'hansReResMap';
 export interface RequestMappingRule {
   req: string
   res: string
+  checked: boolean
 }
 
 export const getRedirectType = (res: string) => {
@@ -14,22 +15,24 @@ export const getRedirectType = (res: string) => {
 };
 
 export function getRedirectUrl (url: string, hansReResMap: RequestMappingRule[]) {
-  hansReResMap.forEach((requestRule: RequestMappingRule) => {
-    const reg = new RegExp(requestRule.req, 'gi');
-    if (typeof requestRule.res !== 'string' || !reg.test(url)) {
-      return;
-    }
-    if (/^file:\/\//.test(requestRule.res)) {
-      do {
-        url = url.replace(reg, requestRule.res);
-        url = getLocalFileUrl(url);
-      } while (reg.test(url));
-    } else {
-      do {
-        url = url.replace(reg, requestRule.res);
-      } while (reg.test(url));
-    }
-  });
+  hansReResMap
+    .filter((requestRule) => requestRule.checked)
+    .forEach((requestRule) => {
+      const reg = new RegExp(requestRule.req, 'gi');
+      if (typeof requestRule.res !== 'string' || !reg.test(url)) {
+        return;
+      }
+      if (/^file:\/\//.test(requestRule.res)) {
+        do {
+          url = url.replace(reg, requestRule.res);
+          url = getLocalFileUrl(url);
+        } while (reg.test(url));
+      } else {
+        do {
+          url = url.replace(reg, requestRule.res);
+        } while (reg.test(url));
+      }
+    });
   return url;
 }
 

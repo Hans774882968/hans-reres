@@ -36,7 +36,8 @@ const AddRuleForm: React.FC<Props> = (props) => {
   const { hansReResMap, setHansReResMap, bg } = useContext(PopupContext)!;
   const initialRule: RequestMappingRule = props.ruleToEdit || {
     req: '.*hub\\.com',
-    res: 'https://baidu.com'
+    res: 'https://baidu.com',
+    checked: true
   };
   const [addRuleForm] = Form.useForm<RequestMappingRule>();
   const rules = {
@@ -136,6 +137,10 @@ const AddRuleForm: React.FC<Props> = (props) => {
             <QuestionCircleOutlined />
           </Tooltip>
         </Form.Item>
+
+        <div style={{ display: 'none' }}>
+          <Form.Item name="checked"><div></div></Form.Item>
+        </div>
 
         <Form.Item {...btnLayout}>
           <Button className={styles['btn']} type="primary" htmlType="submit">

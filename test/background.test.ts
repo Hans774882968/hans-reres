@@ -20,7 +20,8 @@ describe('background.ts', () => {
     const hansReResMap = [
       {
         req: 'https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js',
-        res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js'
+        res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js',
+        checked: true
       }
     ];
     const url = getRedirectUrl('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js', hansReResMap);
@@ -31,7 +32,8 @@ describe('background.ts', () => {
     const hansReResMap = [
       {
         req: 'https://g.csdnimg.cn/side-toolbar/3.4/side-toolbar.js',
-        res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\2.js'
+        res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\2.js',
+        checked: true
       }
     ];
     const url = getRedirectUrl('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js', hansReResMap);
@@ -42,7 +44,8 @@ describe('background.ts', () => {
     const hansReResMap = [
       {
         req: 'zhihu.com',
-        res: 'baidu.com'
+        res: 'baidu.com',
+        checked: true
       }
     ];
     const tests = [
@@ -58,5 +61,17 @@ describe('background.ts', () => {
       const url = getRedirectUrl(test.req, hansReResMap);
       expect(url).toBe(test.res);
     });
+  });
+
+  it('not checked', () => {
+    const hansReResMap = [
+      {
+        req: 'https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js',
+        res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js',
+        checked: false
+      }
+    ];
+    const url = getRedirectUrl('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js', hansReResMap);
+    expect(url).toBe('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js');
   });
 });
