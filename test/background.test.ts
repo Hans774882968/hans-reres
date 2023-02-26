@@ -1,4 +1,4 @@
-import { getRedirectUrl } from '../src/utils';
+import { getRedirectUrl, RewriteType } from '../src/utils';
 import xhr from '../src/xhr';
 
 jest.mock('../src/xhr', () => {
@@ -21,7 +21,8 @@ describe('background.ts', () => {
       {
         req: 'https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js',
         res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js',
-        checked: true
+        checked: true,
+        action: RewriteType.REDIRECT
       }
     ];
     const url = getRedirectUrl('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js', hansReResMap);
@@ -33,7 +34,8 @@ describe('background.ts', () => {
       {
         req: 'https://g.csdnimg.cn/side-toolbar/3.4/side-toolbar.js',
         res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\2.js',
-        checked: true
+        checked: true,
+        action: RewriteType.REDIRECT
       }
     ];
     const url = getRedirectUrl('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js', hansReResMap);
@@ -45,7 +47,8 @@ describe('background.ts', () => {
       {
         req: 'zhihu.com',
         res: 'baidu.com',
-        checked: true
+        checked: true,
+        action: RewriteType.REDIRECT
       }
     ];
     const tests = [
@@ -68,7 +71,8 @@ describe('background.ts', () => {
       {
         req: 'https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js',
         res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js',
-        checked: false
+        checked: false,
+        action: RewriteType.REDIRECT
       }
     ];
     const url = getRedirectUrl('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js', hansReResMap);

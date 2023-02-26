@@ -4,8 +4,11 @@
   .rule-list-item {
     position: relative;
 
-    /* 32px + 2 * 12px */
-    min-height: 56px;
+    @list-item-padding-top: 12px;
+    @btn-height: 32px;
+    @rule-list-item-min-height: @btn-height + 2 * @list-item-padding-top;
+
+    min-height: @rule-list-item-min-height;
     font-weight: bold;
 
     .rule-item-container {
@@ -25,7 +28,9 @@
       position: absolute;
 
       /* right should be same with List.Item */
-      right: 24px;
+      @list-item-padding-right: 24px;
+
+      right: @list-item-padding-right;
       display: none;
     }
   }

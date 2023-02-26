@@ -2,13 +2,20 @@ import xhr from './xhr';
 
 export const hansReResMapName = 'hansReResMap';
 
+export enum RewriteType {
+  SET_HEADER = 'Set Header',
+  REDIRECT = 'Redirect'
+}
+
 export interface RequestMappingRule {
   req: string
+  action: RewriteType
   res: string
   checked: boolean
 }
 
 export const getRedirectType = (res: string) => {
+  if (!res) return 'unknown';
   if (res.startsWith('file://')) return 'file';
   if (res.length <= 3) return 'unknown';
   return 'http';
@@ -19,7 +26,8 @@ export function getRedirectUrl (url: string, hansReResMap: RequestMappingRule[])
     .filter((requestRule) => requestRule.checked)
     .forEach((requestRule) => {
       const reg = new RegExp(requestRule.req, 'gi');
-      if (typeof requestRule.res !== 'string' || !reg.test(url)) {
+      if (!reg.test(url)) return;
+      if (typeof requestRule.res !== 'string' || requestRule.action !== RewriteType.REDIRECT) {
         return;
       }
       if (/^file:\/\//.test(requestRule.res)) {
@@ -79,3 +87,18 @@ export function getLocalFileUrl (url: string) {
     type in typeMap ? typeMap[type as keyof typeof typeMap] : typeMap.txt
   };charset=utf-8,${content}`;
 }
+
+export const isSubSequence = (long: string, short: string) => {
+  if (!short) return true;
+  if (long.length < short.length) return false;
+  const longStr = long.toLowerCase();
+  const shortStr = short.toLowerCase();
+  if (longStr.length === shortStr.length && longStr !== shortStr) return false;
+  let j = 0;
+  for (let i = 0;i < longStr.length;++i) {
+    if (longStr[i] !== shortStr[j]) continue;
+    ++j;
+    if (j === shortStr.length) return true;
+  }
+  return j === shortStr.length;
+};
