@@ -1,9 +1,9 @@
-import React, { useContext, useState, MouseEvent } from 'react';
+import React, { MouseEvent, useContext, useState } from 'react';
 import List from 'antd/es/list';
 import Button from 'antd/es/button';
 import message from 'antd/es/message';
 import Checkbox from 'antd/es/checkbox';
-import { RequestMappingRule } from '../utils';
+import { actionDefaultResultValueMap, RequestMappingRule, RewriteType } from '../utils';
 import { PopupContext } from './PopupApp';
 import EditRuleForm from './EditRuleForm';
 import styles from './RuleList.module.less';
@@ -11,7 +11,14 @@ import styles from './RuleList.module.less';
 const RuleList: React.FC = () => {
   const { hansReResMap, setHansReResMap } = useContext(PopupContext)!;
   const [isDialogVisible, setDialogVisible] = useState(false);
-  const [requestRuleToEdit, setRequestRuleToEdit] = useState<RequestMappingRule | null>(null);
+  const [requestRuleToEdit, setRequestRuleToEdit] = useState<RequestMappingRule>({
+    req: '.*hub\\.com',
+    checked: true,
+    action: {
+      type: RewriteType.REDIRECT,
+      ...actionDefaultResultValueMap[RewriteType.REDIRECT]
+    }
+  });
 
   const showEditDialog = (ruleToEdit: RequestMappingRule) => {
     setRequestRuleToEdit(ruleToEdit);

@@ -1,4 +1,9 @@
-import { getRedirectUrl, hansReResMapName, RequestMappingRule, RewriteType } from '../utils';
+import {
+  getRedirectUrl,
+  hansReResMapName,
+  isSetUAAction,
+  RequestMappingRule
+} from '../utils';
 
 function getMapFromLocalStorage (): RequestMappingRule[] {
   const hansReResMap = window.localStorage.getItem(hansReResMapName);
@@ -15,8 +20,8 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
         .forEach((requestRule) => {
           const reg = new RegExp(requestRule.req, 'gi');
           if (!reg.test(details.url)) return;
-          if (requestRule.action !== RewriteType.SET_HEADER) return;
-          header.value = requestRule.res;
+          if (!isSetUAAction(requestRule.action)) return;
+          header.value = requestRule.action.newUA;
         });
     });
     return { requestHeaders: details.requestHeaders };
@@ -29,6 +34,13 @@ chrome.webRequest.onBeforeRequest.addListener(
   (details) => {
     const hansReResMap = getMapFromLocalStorage();
     const url = getRedirectUrl(details.url, hansReResMap);
+    try {
+      // Unchecked runtime.lastError: redirectUrl 'baidu.com/' is not a valid URL.
+      // 针对Chrome的这种报错，我们只会尝试给出一个友好点的报错提示，不会擅自阻止报错的产生
+      new URL(url);
+    } catch (e) {
+      console.error(`Please make sure that redirectURL '${url}' is a valid url when using hans-reres. For example, 'baidu.com' is not a valid url.`);
+    }
     return url === details.url ? {} : { redirectUrl: url };
   },
   { urls: ['<all_urls>'] },

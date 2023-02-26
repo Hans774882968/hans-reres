@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import Button from 'antd/es/button';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
@@ -7,17 +7,19 @@ import Tooltip from 'antd/es/tooltip';
 import Select from 'antd/es/select';
 import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined';
 import {
+  actionDefaultResultValueMap,
+  FlatRequestMappingRule,
   getRedirectType,
   isSubSequence,
-  RequestMappingRule,
-  RewriteType
+  RewriteType,
+  transformIntoRequestMappingRule
 } from '../utils';
 import { PopupContext } from './PopupApp';
 import styles from './AddRuleForm.module.less';
 
 interface Props {
-  ruleToEdit: RequestMappingRule | null
-  onFinish?: (requestRule: RequestMappingRule) => unknown
+  ruleToEdit: FlatRequestMappingRule | null
+  onFinish?: (requestRule: FlatRequestMappingRule) => unknown
   showClearStorageBtn?: boolean
 }
 
@@ -44,17 +46,17 @@ function getActionOptions () {
 
 const AddRuleForm: React.FC<Props> = (props) => {
   const { hansReResMap, setHansReResMap, bg } = useContext(PopupContext)!;
-  const actionDefaultResultValueMap = {
-    [RewriteType.REDIRECT]: 'https://baidu.com',
-    [RewriteType.SET_HEADER]: 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5'
-  };
-  const initialRule: RequestMappingRule = props.ruleToEdit || {
+
+  const initialRule: FlatRequestMappingRule = props.ruleToEdit || {
     req: '.*hub\\.com',
+    checked: true,
     action: RewriteType.REDIRECT,
-    res: actionDefaultResultValueMap[RewriteType.REDIRECT],
-    checked: true
+    res: actionDefaultResultValueMap[RewriteType.REDIRECT].res,
+    newUA: '',
+    name: '',
+    value: ''
   };
-  const [addRuleForm] = Form.useForm<RequestMappingRule>();
+  const [addRuleForm] = Form.useForm<FlatRequestMappingRule>();
   const rules = {
     req: [
       { required: true, message: 'Request url to be redirected should not be empty' },
@@ -77,16 +79,26 @@ const AddRuleForm: React.FC<Props> = (props) => {
     res: [
       { required: true, message: 'Response url should not be empty' },
       { min: 4, message: 'Response url must be at least 4 characters' }
+    ],
+    newUA: [
+      { required: true, message: 'newUA should not be empty' }
+    ],
+    name: [
+      { required: true, message: 'param name should not be empty' }
+    ],
+    value: [
+      { required: true, message: 'param value should not be empty' }
     ]
   };
   const requestRuleResultFieldValue = Form.useWatch('res', addRuleForm);
   const requestRuleActionFieldValue = Form.useWatch('action', addRuleForm);
 
   const handleExpectedActionChange = (newAction: RewriteType) => {
-    addRuleForm.setFieldValue('res', actionDefaultResultValueMap[newAction]);
+    addRuleForm.setFieldsValue({ ...actionDefaultResultValueMap[newAction] });
   };
-  const onFinish = props.onFinish || ((requestRule: RequestMappingRule) => {
+  const onFinish = props.onFinish || ((flatRequestRule: FlatRequestMappingRule) => {
     const newHansReResMap = [...hansReResMap];
+    const requestRule = transformIntoRequestMappingRule(flatRequestRule);
     newHansReResMap.push(requestRule);
     setHansReResMap(newHansReResMap);
     if (!bg) {
@@ -143,10 +155,28 @@ const AddRuleForm: React.FC<Props> = (props) => {
         </Form.Item>
       </>
     ),
-    [RewriteType.SET_HEADER]: (
-      <Form.Item label="New Header" name="res" rules={rules.res}>
-        <Input.TextArea rows={2} placeholder="Input new header" />
+    [RewriteType.SET_UA]: (
+      <Form.Item label="New User Agent" name="newUA" rules={rules.newUA}>
+        <Input.TextArea rows={2} placeholder="Input new user agent" />
       </Form.Item>
+    ),
+    [RewriteType.ADD_QUERY_PARAM]: (
+      <>
+        <Form.Item label="Name" name="name" rules={rules.name}>
+          <Input
+            allowClear
+            type="text"
+            placeholder="Input param name"
+          />
+        </Form.Item>
+        <Form.Item label="Value" name="value" rules={rules.value}>
+          <Input
+            allowClear
+            type="text"
+            placeholder="Input param value"
+          />
+        </Form.Item>
+      </>
     )
   };
 

@@ -20,9 +20,11 @@ describe('background.ts', () => {
     const hansReResMap = [
       {
         req: 'https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js',
-        res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js',
         checked: true,
-        action: RewriteType.REDIRECT
+        action: {
+          type: RewriteType.REDIRECT,
+          res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js'
+        }
       }
     ];
     const url = getRedirectUrl('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js', hansReResMap);
@@ -33,9 +35,11 @@ describe('background.ts', () => {
     const hansReResMap = [
       {
         req: 'https://g.csdnimg.cn/side-toolbar/3.4/side-toolbar.js',
-        res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\2.js',
         checked: true,
-        action: RewriteType.REDIRECT
+        action: {
+          type: RewriteType.REDIRECT,
+          res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\2.js'
+        }
       }
     ];
     const url = getRedirectUrl('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js', hansReResMap);
@@ -46,9 +50,11 @@ describe('background.ts', () => {
     const hansReResMap = [
       {
         req: 'zhihu.com',
-        res: 'baidu.com',
         checked: true,
-        action: RewriteType.REDIRECT
+        action: {
+          type: RewriteType.REDIRECT,
+          res: 'baidu.com'
+        }
       }
     ];
     const tests = [
@@ -70,12 +76,55 @@ describe('background.ts', () => {
     const hansReResMap = [
       {
         req: 'https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js',
-        res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js',
         checked: false,
-        action: RewriteType.REDIRECT
+        action: {
+          type: RewriteType.REDIRECT,
+          res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js'
+        }
       }
     ];
     const url = getRedirectUrl('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js', hansReResMap);
     expect(url).toBe('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js');
+  });
+
+  it('add query param', () => {
+    const hansReResMap = [
+      {
+        req: '.*\\.csdn\\.net',
+        checked: true,
+        action: {
+          type: RewriteType.REDIRECT,
+          res: 'https://baidu.com'
+        }
+      },
+      {
+        req: '.*\\.csdn\\.net',
+        checked: true,
+        action: {
+          type: RewriteType.SET_UA,
+          newUA: 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5'
+        }
+      },
+      {
+        req: '.*idu\\.com',
+        checked: true,
+        action: {
+          type: RewriteType.ADD_QUERY_PARAM,
+          name: 'role',
+          value: 'acmer'
+        }
+      },
+      {
+        req: '.*idu\\.com',
+        checked: true,
+        action: {
+          type: RewriteType.ADD_QUERY_PARAM,
+          name: 'rate',
+          value: '2400'
+        }
+      }
+    ];
+    const url = getRedirectUrl('https://blog.csdn.net', hansReResMap);
+    expect(url).toBe('https://baidu.com/?role=acmer&rate=2400');
   });
 });

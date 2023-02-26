@@ -216,7 +216,159 @@ node --loader ts-node/esm ./scripts/build.ts
 npm install chalk cross-spawn @types/cross-spawn ts-node -D
 ```
 
+## 数据结构设计
+
+我们希望这个插件支持：
+
+- 重定向到某URL，包括`file://`这种指向本地文件的。
+- 对于GET请求，可以进行`URLSearchParams`的增删改。
+- 对请求头进行增删改。
+- 对响应头进行增删改。
+- 拦截请求。
+- ……
+
+拟定这些需求是参考了Chrome插件`request-interceptor`的`background.js`的部分代码，如下：
+
+```js
+const applyRuleActions = (rule, details, obj) => {
+    if (!rule.actions || !rule.enabled) {
+        return;
+    }
+
+    // const count = countMap.get(rule.id) ?? 0;
+    // countMap.set(rule.id, count + 1);
+
+    const matches = getMatches(rule, details);
+
+    (rule.actions || []).forEach((action) => {
+        if (!action.details) {
+            action.details = {};
+        }
+
+        const {type, details: {name, value}} = action;
+        const updatedName = patternMatchingReplace(name, matches);
+        const updatedValue = patternMatchingReplace(value, matches);
+
+        let actionType;
+
+        switch (type) {
+            case 'block-request':
+                obj.cancel = true; break;
+            case 'add-request-header':
+            case 'modify-request-header':
+            case 'delete-request-header':
+                actionType = type.split('-')[0];
+                modifyHeaders(obj.requestHeaders, actionType, updatedName, updatedValue);
+                obj.requestHeadersModified = true;
+                break;
+            case 'add-response-header':
+            case 'modify-response-header':
+            case 'delete-response-header':
+                actionType = type.split('-')[0];
+                modifyHeaders(obj.responseHeaders, actionType, updatedName, updatedValue);
+                obj.responseHeadersModified = true;
+                break;
+            case 'add-query-param':
+            case 'modify-query-param':
+            case 'delete-query-param':
+                actionType = type.split('-')[0];
+                modifyQueryParams(obj.queryParams, actionType, updatedName, updatedValue);
+                obj.queryParamsModified = true;
+                break;
+            case 'redirect-to':
+                // Preflight requests can not be redirected
+                if (details.method.toLowerCase() !== 'options') {
+                    obj.redirectUrl = updatedValue;
+                }
+
+                break;
+            case 'throttle':
+                obj.redirectUrl = `https://deelay.me/${updatedValue}/${details.url}`; break;
+        }
+
+    });
+};
+```
+
+我认为`background.ts`的一条规则这样描述看上去还算合理：
+
+```ts
+export enum RewriteType {
+  SET_UA = 'Set UA',
+  REDIRECT = 'Redirect',
+  ADD_QUERY_PARAM = 'Add Query Param'
+}
+
+export interface RequestMappingRule {
+  req: string
+  action: Action
+  checked: boolean
+}
+
+export interface Action {
+  type: RewriteType
+}
+
+export interface RedirectAction extends Action{
+  res: string
+}
+
+export interface SetUAAction extends Action {
+  newUA: string
+}
+
+export interface AddQueryParamAction extends Action{
+  name: string
+  value: string
+}
+```
+
+但如果想直接使用`antd`的`Form`组件，`Form.useForm<RequestMappingRule>()`里的`action`属性（是`Action`接口）应该无法直接映射到表单的字段。如何解决呢？我引入了（有更好的做法请佬们教教！）：
+
+```ts
+export interface FlatRequestMappingRule {
+  req: string
+  checked: boolean
+  action: RewriteType
+  res: string
+  newUA: string
+  name: string
+  value: string
+}
+```
+
+然后在`Form`组件`onFinish`事件里将`FlatRequestMappingRule`翻译为`RequestMappingRule`，这样就能顺利写入`localStorage`啦。同理，从`localStorage`加载`RequestMappingRule`后，也要翻译为`FlatRequestMappingRule`才能顺利输入`Form`组件，渲染Edit对话框。两者相互转化的函数如下：
+
+```ts
+export function transformIntoRequestMappingRule (o: FlatRequestMappingRule): RequestMappingRule {
+  const action: Action = (() => {
+    if (o.action === RewriteType.REDIRECT) return { type: o.action, res: o.res };
+    if (o.action === RewriteType.SET_UA) return { type: o.action, newUA: o.newUA };
+    return { type: o.action, name: o.name, value: o.value };
+  })();
+  return {
+    req: o.req,
+    checked: o.checked,
+    action
+  };
+}
+
+export function transformIntoFlatRequestMappingRule (o: RequestMappingRule): FlatRequestMappingRule {
+  const ret: FlatRequestMappingRule = {
+    req: o.req,
+    checked: o.checked,
+    action: o.action.type,
+    res: '',
+    newUA: '',
+    name: '',
+    value: ''
+  };
+  return { ...ret, ...o.action };
+}
+```
+
 ## 参考资料
+
 1. https://juejin.cn/post/7185920750765735973
 2. stylelint规则文档：https://ask.dcloud.net.cn/article/36067
 3. https://juejin.cn/post/7078330175145902110

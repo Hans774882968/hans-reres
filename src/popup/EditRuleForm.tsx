@@ -1,20 +1,27 @@
 import React, { useContext } from 'react';
 import Modal from 'antd/es/modal';
-import { RequestMappingRule } from '../utils';
+import {
+  RequestMappingRule,
+  FlatRequestMappingRule,
+  transformIntoFlatRequestMappingRule,
+  transformIntoRequestMappingRule
+} from '../utils';
 import AddRuleForm from './AddRuleForm';
 import { PopupContext } from './PopupApp';
 
 interface Props {
   visible: boolean
-  requestRule: RequestMappingRule | null
+  requestRule: RequestMappingRule
   setDialogVisible: (visible: boolean) => void
 }
 
 const EditRuleForm: React.FC<Props> = (props) => {
   const { hansReResMap, setHansReResMap } = useContext(PopupContext)!;
   const { visible, requestRule, setDialogVisible } = props;
-  const handleSubmitSuccess = (newRequestRule: RequestMappingRule) => {
+  const flatRequestRule = transformIntoFlatRequestMappingRule(requestRule);
+  const handleSubmitSuccess = (newFlatRequestRule: FlatRequestMappingRule) => {
     const newHansReResMap = [...hansReResMap];
+    const newRequestRule = transformIntoRequestMappingRule(newFlatRequestRule);
     for (let i = 0; i < newHansReResMap.length; ++i) {
       if (newHansReResMap[i] === requestRule) {
         newHansReResMap.splice(i, 1, newRequestRule);
@@ -33,7 +40,7 @@ const EditRuleForm: React.FC<Props> = (props) => {
       cancelButtonProps={{ style: { display: 'none' }}}
       onCancel={() => setDialogVisible(false)}
     >
-      <AddRuleForm ruleToEdit={requestRule} onFinish={handleSubmitSuccess} />
+      <AddRuleForm ruleToEdit={flatRequestRule} onFinish={handleSubmitSuccess} />
     </Modal>
   );
 };
