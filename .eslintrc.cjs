@@ -19,6 +19,8 @@ module.exports = {
     '@typescript-eslint'
   ],
   'rules': {
+    '@typescript-eslint/no-empty-function': 'off',
+    'no-empty': 'off',
     // http://eslint.cn/docs/rules/
     'no-unused-vars': 'warn',
     'no-console': 'off',

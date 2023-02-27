@@ -69,7 +69,6 @@ export default function useLocalStorageState<T = undefined> (
   const serializer = options?.serializer;
   // disabling ESLint because the above if statement can be executed only on the server. the value
   // of `window` can't change between calls.
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   return useBrowserLocalStorageState(
     key,
     defaultValue,
@@ -137,7 +136,6 @@ function useBrowserLocalStorageState<T> (
       [key]
     ),
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     () => {
       const item = localStorageMultiSource.getItem(key);
 
