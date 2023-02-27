@@ -16,7 +16,9 @@ function main () {
   ];
   const buildCmd = cmds.join(' && ');
   console.log(chalk.greenBright('Build command:', buildCmd));
-  const spawnReturn = spawn.sync(buildCmd, [], { stdio: 'inherit' });
+  // 加 shell: true 解决MAC上运行报错 Error: spawnSync <cmd> ENOENT 导致无法构建的问题
+  // https://stackoverflow.com/questions/27688804/how-do-i-debug-error-spawn-enoent-on-node-js
+  const spawnReturn = spawn.sync(buildCmd, [], { stdio: 'inherit', shell: true });
   if (spawnReturn.error) {
     console.error(chalk.redBright('Build failed with error'), spawnReturn.error);
     return;

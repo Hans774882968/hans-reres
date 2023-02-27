@@ -1,5 +1,52 @@
 [TOC]
 
+## Chrome插件request-interceptor background.js源码赏析
+
+**`request-interceptor`**作者说没有开源，但我们仍然能轻易找到其`background.js`地址。~~幸好没有特意进行混淆~~
+
+1. 安装插件。
+2. 执行命令：`open ~/Library/Application\ Support/Google/Chrome/Default/Extensions`。
+3. 根据插件ID找到对应的文件夹。
+
+如何获得**`request-interceptor`**的`background.js`所使用的数据结构：根据源码，只需要在`background.js`控制台运行以下代码即可：
+
+```js
+let dataSet1 = {};
+let storageKey1 = '__redirect__chrome__extension__configuration__vk__';
+chrome.storage.local.get(storageKey1, config => {
+    dataSet1 = {};
+    Object.assign(dataSet1, (config || {})[storageKey1] || {});
+});
+```
+
+代码比较长就不完整贴出啦。[带注释版源码地址](https://github.com/Hans774882968/hans-reres/blob/main/request-interceptor-bg.js)
+
+可以学到什么：
+
+1. 作者设计规则所执行的操作的时候，借鉴了http状态码设计的思想。`add-request-header`、`add-response-header`等操作的类型都是“add”，于是可以有下面的代码：
+
+```js
+const modifyHeaders = (headers, action, name, value) => {
+  if (!headers || !action) {
+    return;
+  }
+  if (action === 'add') {
+    headers.set(name, value);
+  } else if (action === 'modify') {
+    if (headers.has(name)) {
+      headers.set(name, value);
+    }
+  } else if (action === 'delete') {
+    headers.delete(name);
+  }
+};
+// 调用
+actionType = type.split('-')[0];
+modifyHeaders(obj.responseHeaders, actionType, updatedName, updatedValue);
+```
+
+这一技巧可以减少一些重复的`if-else`。
+
 ## 技术选型
 
 `React Hooks + vite + jest`。使用下面的命令来创建：
@@ -185,7 +232,7 @@ function main () {
   ];
   const buildCmd = cmds.join(' && ');
   console.log(chalk.greenBright('Build command:', buildCmd));
-  const spawnReturn = spawn.sync(buildCmd, [], { stdio: 'inherit' });
+  const spawnReturn = spawn.sync(buildCmd, [], { stdio: 'inherit', shell: true });
   if (spawnReturn.error) {
     console.error(chalk.redBright('Build failed with error'), spawnReturn.error);
     return;
@@ -199,8 +246,9 @@ main();
 
 
 
-1. `cross-spawn`可以理解成一个跨平台版的`child_process.spawn`，避免自己处理跨平台适配。[参考链接5](https://www.cnblogs.com/cangqinglang/p/14761536.html)
+1. `cross-spawn`可以理解成一个跨平台版的`child_process.spawn`，避免自己处理跨平台适配。`spawn.sync`就是`child_process.spawnSync`。[参考链接5](https://www.cnblogs.com/cangqinglang/p/14761536.html)
 2. `chalk`用来输出彩色文本。
+3. 添加`shell: true`可解决MAC上运行报错`Error: spawnSync <cmd> ENOENT`导致无法构建的问题，[参考链接7](https://stackoverflow.com/questions/27688804/how-do-i-debug-error-spawn-enoent-on-node-js)
 
 根据[参考链接6](https://juejin.cn/post/6939538768911138823)，构建命令要相应地修改为：
 
@@ -375,3 +423,4 @@ export function transformIntoFlatRequestMappingRule (o: RequestMappingRule): Fla
 4. `npm init @vitejs/app`到底干了什么：https://juejin.cn/post/6948202986573135908
 5. https://www.cnblogs.com/cangqinglang/p/14761536.html
 6. 使用ts-node运行ts脚本及踩过的坑：https://juejin.cn/post/6939538768911138823
+7. https://stackoverflow.com/questions/27688804/how-do-i-debug-error-spawn-enoent-on-node-js
