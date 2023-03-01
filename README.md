@@ -135,6 +135,97 @@ vscode打开设置，再打开`settings.json`：
 
 若不生效，尝试重启vscode。
 
+## 配置husky + commitlint
+
+根据[参考链接8](https://juejin.cn/post/6990307028162281508)
+
+（1）项目级安装commitlint
+
+```bash
+npm i -D @commitlint/config-conventional @commitlint/cli
+```
+
+（2）添加`commitlint.config.cjs`（如果`package.json`配置了`"type": "module"`就需要`.cjs`，否则`git commit`时会报错）
+
+```js
+module.exports = {
+  extends: ['@commitlint/config-conventional'],
+  rules: {}
+};
+```
+
+（3）安装husky：`npm i -D husky`
+
+（4）对于`husky版本>=5.0.0`，根据[官方文档](https://typicode.github.io/husky/#/)，首先安装git钩子：`npx husky install`，运行后会生成`.husky/_`文件夹，下面有`.gitignore`和`husky.sh`文件，都是被忽略的。接下来添加几个钩子：
+
+```bash
+npx husky add .husky/pre-commit "npm run lint"
+npx husky add .husky/pre-commit "npm run lint:s"
+npx husky add .husky/commit-msg 'npx commitlint --edit $1'
+```
+
+会生成`.husky/commit-msg`和`.husky/pre-commit`两个文件。不用命令，自己手动编辑也是可行的，分析过程见下文《`husky add`命令解析》。
+
+接下来可以尝试提交了。效果：
+
+```
+⧗   input: README添加husky + commitlint
+✖   subject may not be empty [subject-empty]
+✖   type may not be empty [type-empty]
+```
+
+### husky add命令解析
+
+命令举例：`npx husky add .husky/commit-msg 'npx commitlint --edit $1'`
+
+cli的入口`node_modules/husky/lib/bin.js`：
+
+```js
+const [, , cmd, ...args] = process.argv;
+const ln = args.length;
+const [x, y] = args;
+const hook = (fn) => () => !ln || ln > 2 ? help(2) : fn(x, y);
+const cmds = {
+    install: () => (ln > 1 ? help(2) : h.install(x)),
+    uninstall: h.uninstall,
+    set: hook(h.set),
+    add: hook(h.add),
+    ['-v']: () => console.log(require(p.join(__dirname, '../package.json')).version),
+};
+try {
+    cmds[cmd] ? cmds[cmd]() : help(0);
+}
+```
+
+`x, y`分别表示文件名`.husky/commit-msg`和待添加的命令`npx commitlint --edit $1`。`h`就是`node_modules/husky/lib/index.js`。找到相关函数：
+
+```js
+function set(file, cmd) {
+    const dir = p.dirname(file);
+    if (!fs.existsSync(dir)) {
+        throw new Error(`can't create hook, ${dir} directory doesn't exist (try running husky install)`);
+    }
+    fs.writeFileSync(file, `#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+${cmd}
+`, { mode: 0o0755 });
+    l(`created ${file}`); // 创建文件后会输出 husky - created .husky/pre-commit
+}
+
+function add(file, cmd) {
+    if (fs.existsSync(file)) {
+        fs.appendFileSync(file, `${cmd}\n`);
+        l(`updated ${file}`); // 在已有文件后添加后则会输出 husky - updated .husky/pre-commit
+    }
+    else {
+        set(file, cmd);
+    }
+}
+```
+
+总而言之，不执行这条命令，直接在`.husky/commit-msg`之后加命令是等效的。
+
 ## 配置jest
 
 根据[参考链接3](https://juejin.cn/post/7078330175145902110)：
@@ -424,3 +515,4 @@ export function transformIntoFlatRequestMappingRule (o: RequestMappingRule): Fla
 5. https://www.cnblogs.com/cangqinglang/p/14761536.html
 6. 使用ts-node运行ts脚本及踩过的坑：https://juejin.cn/post/6939538768911138823
 7. https://stackoverflow.com/questions/27688804/how-do-i-debug-error-spawn-enoent-on-node-js
+8. 使用commitlint规范commit格式：https://juejin.cn/post/6990307028162281508
