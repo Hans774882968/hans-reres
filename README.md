@@ -164,7 +164,7 @@ npx husky add .husky/pre-commit "npm run lint:s"
 npx husky add .husky/commit-msg 'npx commitlint --edit $1'
 ```
 
-会生成`.husky/commit-msg`和`.husky/pre-commit`两个文件。不用命令，自己手动编辑也是可行的，分析过程见下文《`husky add`命令解析》。
+会生成`.husky/commit-msg`和`.husky/pre-commit`两个文件。不用命令，自己手动编辑也是可行的，分析过程见下文《`husky add、install`命令解析》。
 
 接下来可以尝试提交了。效果：
 
@@ -174,7 +174,34 @@ npx husky add .husky/commit-msg 'npx commitlint --edit $1'
 ✖   type may not be empty [type-empty]
 ```
 
-### husky add命令解析
+### husky add、install命令解析
+#### vscode调试node cli程序
+
+创建`.vscode/launch.json`：
+
+```json
+{
+  // 使用 IntelliSense 了解相关属性。 
+  // 悬停以查看现有属性的描述。
+  // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npx husky add .husky/pre-commit 'npm run lint:s'",
+      "name": "npx husky add",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+    }
+  ]
+}
+```
+
+之后可以直接在“运行和调试”选择要执行的命令了。
+
+#### husky add
 
 命令举例：`npx husky add .husky/commit-msg 'npx commitlint --edit $1'`
 
@@ -225,6 +252,61 @@ function add(file, cmd) {
 ```
 
 总而言之，不执行这条命令，直接在`.husky/commit-msg`之后加命令是等效的。
+
+#### husky install
+
+此时我们也可以快速了解`npx husky install`所做的事。
+
+```js
+const git = (args) => cp.spawnSync('git', args, { stdio: 'inherit' });
+function install(dir = '.husky') {
+    if (process.env.HUSKY === '0') {
+        l('HUSKY env variable is set to 0, skipping install');
+        return;
+    }
+    /* 执行 git rev-parse 命令，正常情况下无输出
+    git(['rev-parse']){
+      output: (3) [null, null, null]
+      pid: 90205
+      signal: null
+      status: 0
+      stderr: null
+      stdout: null
+    }
+    */
+    if (git(['rev-parse']).status !== 0) {
+        l(`git command not found, skipping install`);
+        return;
+    }
+    const url = 'https://typicode.github.io/husky/#/?id=custom-directory';
+    // npx husky install <dir>的dir参数不能跳出项目根目录
+    if (!p.resolve(process.cwd(), dir).startsWith(process.cwd())) {
+        throw new Error(`.. not allowed (see ${url})`);
+    }
+    if (!fs.existsSync('.git')) {
+        throw new Error(`.git can't be found (see ${url})`);
+    }
+    try {
+        // 创建“.husky/_”文件夹
+        fs.mkdirSync(p.join(dir, '_'), { recursive: true });
+        // 创建“.husky/_/.gitignore”文件
+        fs.writeFileSync(p.join(dir, '_/.gitignore'), '*');
+        // .husky/_/husky.sh 来源于 node_modules
+        fs.copyFileSync(p.join(__dirname, '../husky.sh'), p.join(dir, '_/husky.sh'));
+        // 执行 git config core.hooksPath .husky 命令
+        // 同理取消githooks只需要执行 git config --unset core.hooksPath
+        const { error } = git(['config', 'core.hooksPath', dir]);
+        if (error) {
+            throw error;
+        }
+    }
+    catch (e) {
+        l('Git hooks failed to install');
+        throw e;
+    }
+    l('Git hooks installed');
+}
+```
 
 ## 配置jest
 
