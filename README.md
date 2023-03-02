@@ -437,6 +437,89 @@ node --loader ts-node/esm ./scripts/build.ts
 npm install chalk cross-spawn @types/cross-spawn ts-node -D
 ```
 
+## 引入i18n
+
+根据[参考链接9](https://juejin.cn/post/7139855730105942030)，我们可以用`react-i18next`快速为react项目引入i18n。
+
+（1）安装依赖
+
+```bash
+npm i i18next react-i18next i18next-browser-languagedetector
+```
+
+
+
+- `react-i18next`是一个`i18next`插件，用来降低 react 的使用成本。
+- `i18next-browser-languagedetector`是一个`i18next`插件，它会自动检测浏览器的语言。
+
+（2）我们建一个文件夹`src/i18n`存放i18n相关的代码。i18n需要考虑的一个核心问题是：资源文件的加载、使用策略。为了简单，我们直接使用`.ts`文件。创建`src/i18n/i18n-init.ts`如下。
+
+1. `i18n.use`注册`i18next`插件。
+2. 这里封装了一个`$gt`函数，期望能直接调用`$gt`而不需要在组件里多写一句`const { t } = useTranslation()`。但麻烦的是，`t`函数必须直接在组件中引用，甚至不能在组件内定义的函数里调用，否则它会直接**抛出错误让我们整个应用崩溃**……幸好本插件规模很小，这个问题可以容忍。
+
+```ts
+import i18n from 'i18next';
+import { initReactI18next, useTranslation } from 'react-i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+import en from './en';
+import zh from './zh';
+
+i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    debug: true,
+    fallbackLng: 'en',
+    interpolation: {
+      escapeValue: false
+    },
+    resources: {
+      en: {
+        translation: en
+      },
+      zh: {
+        translation: zh
+      }
+    }
+  });
+
+export const $gt = (key: string | string[]) => {
+  const { t } = useTranslation();
+  return t(key);
+};
+
+export const langOptions = [
+  { value: 'en', label: 'English' },
+  { value: 'zh', label: '中文' }
+];
+
+export default i18n;
+```
+
+（3）语言切换功能。`useTranslation()`也会返回一个`i18n`对象，我们调用`i18n.changeLanguage`即可切换语言。
+
+```tsx
+/*
+export const langOptions = [
+  { value: 'en', label: 'English' },
+  { value: 'zh', label: '中文' }
+];
+*/
+const changeLang = (langValue: string) => {
+  i18n.changeLanguage(langValue);
+};
+<Select
+  defaultValue={i18n.resolvedLanguage}
+  placeholder={$gt('Select language')}
+  options={langOptions}
+  onChange={changeLang}
+/>
+```
+
+## 动态切换暗黑主题
+
+antd5提供了动态切换主题的能力。TODO
+
 ## 数据结构设计
 
 我们希望这个插件支持：
@@ -598,3 +681,4 @@ export function transformIntoFlatRequestMappingRule (o: RequestMappingRule): Fla
 6. 使用ts-node运行ts脚本及踩过的坑：https://juejin.cn/post/6939538768911138823
 7. https://stackoverflow.com/questions/27688804/how-do-i-debug-error-spawn-enoent-on-node-js
 8. 使用commitlint规范commit格式：https://juejin.cn/post/6990307028162281508
+9. https://juejin.cn/post/7139855730105942030

@@ -1,9 +1,9 @@
 // modify from https://github.com/astoilkov/use-local-storage-state
-import util from 'util';
-import superjson from 'superjson';
-import { render, renderHook, act } from '@testing-library/react';
+import { act, render, renderHook } from '@testing-library/react';
 import React, { useEffect, useLayoutEffect, useMemo } from 'react';
+import superjson from 'superjson';
 import useLocalStorageState, { inMemoryData } from '../src/hooks/useLocalStorageState';
+import util from 'util';
 // Unfortunately, we can not import lodash on demand
 import * as lodash from 'lodash';
 
@@ -442,9 +442,9 @@ describe('useLocalStorageState()', () => {
       window.dispatchEvent(
         new StorageEvent('storage', {
           key,
+          newValue: JSON.stringify(newValue),
           oldValue,
-          storageArea,
-          newValue: JSON.stringify(newValue)
+          storageArea
         })
       );
     };
@@ -610,10 +610,10 @@ describe('useLocalStorageState()', () => {
         localStorage.setItem('todos', JSON.stringify(['third', 'forth']));
         window.dispatchEvent(
           new StorageEvent('storage', {
-            storageArea: localStorage,
             key: 'todos',
+            newValue: JSON.stringify(['third', 'forth']),
             oldValue: JSON.stringify(['first', 'second']),
-            newValue: JSON.stringify(['third', 'forth'])
+            storageArea: localStorage
           })
         );
       });
@@ -712,11 +712,11 @@ describe('useLocalStorageState()', () => {
       ]));
       const { result } = renderHook(() =>
         useLocalStorageState('todos', {
-          localStorageSource: wnd,
           defaultValue: [
             { name: 'third' },
             { name: 'fourth' }
-          ]
+          ],
+          localStorageSource: wnd
         })
       );
       const [todos] = result.current;
@@ -733,22 +733,22 @@ describe('useLocalStorageState()', () => {
     });
 
     const mockLocalStorage: Storage = {
-      o: {},
-      length: 0,
-      getItem (key: string): string | null {
-        return key in this.o ? this.o[key] : null;
-      },
-      setItem (key: string, value: string): void {
-        this.o[key] = value;
-      },
       clear (): void {
         this.o = {};
       },
-      removeItem (key: string): void {
-        delete this.o[key];
+      getItem (key: string): string | null {
+        return key in this.o ? this.o[key] : null;
       },
       key (): string | null {
         return null;
+      },
+      length: 0,
+      o: {},
+      removeItem (key: string): void {
+        delete this.o[key];
+      },
+      setItem (key: string, value: string): void {
+        this.o[key] = value;
       }
     };
 
@@ -780,8 +780,8 @@ describe('useLocalStorageState()', () => {
 
       const { result } = renderHook(() =>
         useLocalStorageState('colors', {
-          localStorageSource: wnd,
-          defaultValue: ['skyblue', 'deepskyblue']
+          defaultValue: ['skyblue', 'deepskyblue'],
+          localStorageSource: wnd
         })
       );
       expect(result.current[0]).toStrictEqual(['skyblue', 'deepskyblue']);

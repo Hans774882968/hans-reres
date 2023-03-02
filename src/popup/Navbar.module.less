@@ -1,0 +1,38 @@
+.custom-theme-dark-navbar,.custom-theme-default-navbar {
+  @navbar-padding-top: 12px;
+  @plugin-icon-height: 48px;
+
+  padding: @navbar-padding-top 20px;
+  min-height: 2 * @navbar-padding-top + @plugin-icon-height;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 10%), 0 1px 6px -1px rgb(0 0 0 / 10%), 0 2px 4px 0 rgb(0 0 0 / 10%);
+  transition: background-color .3s;
+  box-sizing: border-box;
+
+  .navbar-col {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+
+    .custom-theme-dark-plugin-name, .custom-theme-default-plugin-name {
+      font-size: 18px;
+      font-weight: bold;
+      transition: color .3s;
+    }
+
+    .custom-theme-dark-plugin-name {
+      color: rgb(255 255 255 / 85%);
+    }
+
+    .custom-theme-default-plugin-name {
+      color: black;
+    }
+
+    .select-lang {
+      min-width: 100px;
+    }
+  }
+}
+
+.custom-theme-dark-navbar {
+  background-color: #161b22;
+}

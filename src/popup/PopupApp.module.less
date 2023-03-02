@@ -1,3 +1,13 @@
 .app {
-  padding: 20px;
+  @popup-body-width: 720px;
+  @popup-body-padding: 20px;
+  @app-min-width: @popup-body-width + 2 * @popup-body-padding;
+
+  min-width: @app-min-width;
+
+  .popup-body-container {
+    // antd 自带 box-sizing: border-box
+    padding: @popup-body-padding;
+    min-width: @app-min-width;
+  }
 }

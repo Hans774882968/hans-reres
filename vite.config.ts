@@ -1,18 +1,27 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import react from '@vitejs/plugin-react';
-import viteEslint from 'vite-plugin-eslint';
 import copy from 'rollup-plugin-copy';
 import pkg from './package.json';
+import react from '@vitejs/plugin-react';
 import transformManifestPlugin from './plugins/transform-manifest-plugin';
+import viteEslint from 'vite-plugin-eslint';
 
 const destName = `chrome-plugin-hans-reres-v${pkg.version}`;
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, 'src')
+  build: {
+    rollupOptions: {
+      input: [
+        'popup.html',
+        'options.html'
+      ],
+      output: {
+        assetFileNames: '[name].[hash].[ext]',
+        chunkFileNames: '[name].[hash].js',
+        dir: destName,
+        entryFileNames: '[name].js'
+      }
     }
   },
   css: {
@@ -31,24 +40,15 @@ export default defineConfig({
       dest: destName, manifestPath: 'manifest-pre.json'
     }),
     copy({
+      hook: 'writeBundle',
       targets: [
-        { src: 'src/assets', dest: destName }
-      ],
-      hook: 'writeBundle'
+        { dest: destName, src: 'src/assets' }
+      ]
     })
   ],
-  build: {
-    rollupOptions: {
-      input: [
-        'popup.html',
-        'options.html'
-      ],
-      output: {
-        chunkFileNames: '[name].[hash].js',
-        assetFileNames: '[name].[hash].[ext]',
-        entryFileNames: '[name].js',
-        dir: destName
-      }
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src')
     }
   }
 });

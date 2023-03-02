@@ -1,6 +1,6 @@
 // modify from https://github1s.com/astoilkov/use-local-storage-state/blob/main/src/useLocalStorageState.ts
 import { Dispatch, SetStateAction } from 'react';
-import { useRef, useMemo, useEffect, useCallback, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 
 // in memory fallback used then `localStorage` throws an error
 export const inMemoryData = new Map<string, unknown>();

@@ -1,4 +1,4 @@
-import { getRedirectUrl, RewriteType } from '../src/utils';
+import { RewriteType, getRedirectUrl } from '../src/utils';
 import xhr from '../src/xhr';
 
 jest.mock('../src/xhr', () => {
@@ -19,12 +19,12 @@ describe('background.ts', () => {
   it('res is file protocol', () => {
     const hansReResMap = [
       {
-        req: 'https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js',
-        checked: true,
         action: {
-          type: RewriteType.REDIRECT,
-          res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js'
-        }
+          res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js',
+          type: RewriteType.REDIRECT
+        },
+        checked: true,
+        req: 'https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js'
       }
     ];
     const url = getRedirectUrl('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js', hansReResMap);
@@ -34,12 +34,12 @@ describe('background.ts', () => {
   it('rule does not match', () => {
     const hansReResMap = [
       {
-        req: 'https://g.csdnimg.cn/side-toolbar/3.4/side-toolbar.js',
-        checked: true,
         action: {
-          type: RewriteType.REDIRECT,
-          res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\2.js'
-        }
+          res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\2.js',
+          type: RewriteType.REDIRECT
+        },
+        checked: true,
+        req: 'https://g.csdnimg.cn/side-toolbar/3.4/side-toolbar.js'
       }
     ];
     const url = getRedirectUrl('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js', hansReResMap);
@@ -49,12 +49,12 @@ describe('background.ts', () => {
   it('res is http protocol', () => {
     const hansReResMap = [
       {
-        req: 'zhihu.com',
-        checked: true,
         action: {
-          type: RewriteType.REDIRECT,
-          res: 'baidu.com'
-        }
+          res: 'baidu.com',
+          type: RewriteType.REDIRECT
+        },
+        checked: true,
+        req: 'zhihu.com'
       }
     ];
     const tests = [
@@ -75,12 +75,12 @@ describe('background.ts', () => {
   it('not checked', () => {
     const hansReResMap = [
       {
-        req: 'https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js',
-        checked: false,
         action: {
-          type: RewriteType.REDIRECT,
-          res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js'
-        }
+          res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js',
+          type: RewriteType.REDIRECT
+        },
+        checked: false,
+        req: 'https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js'
       }
     ];
     const url = getRedirectUrl('https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js', hansReResMap);
@@ -90,38 +90,38 @@ describe('background.ts', () => {
   it('add query param', () => {
     const hansReResMap = [
       {
-        req: '.*\\.csdn\\.net',
-        checked: true,
         action: {
-          type: RewriteType.REDIRECT,
-          res: 'https://baidu.com'
-        }
+          res: 'https://baidu.com',
+          type: RewriteType.REDIRECT
+        },
+        checked: true,
+        req: '.*\\.csdn\\.net'
       },
       {
-        req: '.*\\.csdn\\.net',
-        checked: true,
         action: {
-          type: RewriteType.SET_UA,
-          newUA: 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5'
-        }
+          newUA: 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5',
+          type: RewriteType.SET_UA
+        },
+        checked: true,
+        req: '.*\\.csdn\\.net'
       },
       {
-        req: '.*idu\\.com',
-        checked: true,
         action: {
-          type: RewriteType.ADD_QUERY_PARAM,
           name: 'role',
+          type: RewriteType.ADD_QUERY_PARAM,
           value: 'acmer'
-        }
+        },
+        checked: true,
+        req: '.*idu\\.com'
       },
       {
-        req: '.*idu\\.com',
-        checked: true,
         action: {
-          type: RewriteType.ADD_QUERY_PARAM,
           name: 'rate',
+          type: RewriteType.ADD_QUERY_PARAM,
           value: '2400'
-        }
+        },
+        checked: true,
+        req: '.*idu\\.com'
       }
     ];
     const url = getRedirectUrl('https://blog.csdn.net', hansReResMap);

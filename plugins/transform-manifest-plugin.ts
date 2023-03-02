@@ -10,7 +10,7 @@ export default function transformManifestPlugin (options: {
     name: 'vite:transform-manifest-plugin',
     writeBundle () {
       const { dest = 'dist', manifestPath = './manifest.json' } = options;
-      fs.readFile(manifestPath, { flag: 'r', encoding: 'utf-8' }, (err, dat) => {
+      fs.readFile(manifestPath, { encoding: 'utf-8', flag: 'r' }, (err, dat) => {
         if (err) {
           console.error('error reading', manifestPath, err);
           return;

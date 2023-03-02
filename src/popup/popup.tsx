@@ -1,7 +1,8 @@
+import '../i18n/i18n-init';
+import '../index.module.less';
+import App from './PopupApp';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './PopupApp';
-import '../index.module.less';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

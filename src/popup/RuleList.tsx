@@ -1,29 +1,32 @@
-import React, { MouseEvent, useContext, useState } from 'react';
-import List from 'antd/es/list';
+import { $gt } from '../i18n/i18n-init';
+import { PopupContext, ThemeContext } from './PopupApp';
+import { RequestMappingRule, RewriteType, actionDefaultResultValueMap } from '../utils';
 import Button from 'antd/es/button';
-import message from 'antd/es/message';
 import Checkbox from 'antd/es/checkbox';
-import { actionDefaultResultValueMap, RequestMappingRule, RewriteType } from '../utils';
-import { PopupContext } from './PopupApp';
 import EditRuleForm from './EditRuleForm';
+import List from 'antd/es/list';
+import React, { MouseEvent, useContext, useState } from 'react';
+import message from 'antd/es/message';
 import styles from './RuleList.module.less';
 
 const RuleList: React.FC = () => {
   const { hansReResMap, setHansReResMap } = useContext(PopupContext)!;
+  const { curClassNamePrefix } = useContext(ThemeContext)!;
   const [isDialogVisible, setDialogVisible] = useState(false);
   const [requestRuleToEdit, setRequestRuleToEdit] = useState<RequestMappingRule>({
-    req: '.*hub\\.com',
-    checked: true,
     action: {
       type: RewriteType.REDIRECT,
       ...actionDefaultResultValueMap[RewriteType.REDIRECT]
-    }
+    },
+    checked: true,
+    req: '.*hub\\.com'
   });
 
   const showEditDialog = (ruleToEdit: RequestMappingRule) => {
     setRequestRuleToEdit(ruleToEdit);
     setDialogVisible(true);
   };
+  const ruleRemovedMessage = $gt('Rule removed');
   const removeRule = (ruleToRemove: RequestMappingRule) => {
     const newHansReResMap = [...hansReResMap];
     for (let i = 0;i < newHansReResMap.length;++i) {
@@ -32,7 +35,7 @@ const RuleList: React.FC = () => {
       }
     }
     setHansReResMap(newHansReResMap);
-    message.success('Rule removed');
+    message.success(ruleRemovedMessage);
   };
   const onRuleActivateStatusChange = (e: MouseEvent, requestRule: RequestMappingRule) => {
     const classList = (e.target as HTMLElement).classList;
@@ -46,6 +49,8 @@ const RuleList: React.FC = () => {
     }
     setHansReResMap(newHansReResMap);
   };
+  const editText = $gt('Edit');
+  const removeText = $gt('Remove');
 
   return (
     <>
@@ -54,7 +59,7 @@ const RuleList: React.FC = () => {
         itemLayout="horizontal"
         dataSource={hansReResMap}
         renderItem={(requestRule) => (
-          <List.Item className={styles['rule-list-item']}>
+          <List.Item className={styles[`${curClassNamePrefix}-rule-list-item`]}>
             <div className={styles['rule-item-container']} onClick={(e) => {
               onRuleActivateStatusChange(e, requestRule);
             }}>
@@ -62,8 +67,8 @@ const RuleList: React.FC = () => {
               <span className={styles['req']}>{requestRule.req}</span>
             </div>
             <div className={styles['btns']}>
-              <Button type="primary" onClick={() => showEditDialog(requestRule)}>Edit</Button>
-              <Button onClick={() => removeRule(requestRule)}>Remove</Button>
+              <Button type="primary" onClick={() => showEditDialog(requestRule)}>{editText}</Button>
+              <Button onClick={() => removeRule(requestRule)}>{removeText}</Button>
             </div>
           </List.Item>
         )}

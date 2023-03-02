@@ -14,10 +14,10 @@ export default defineConfig({
         backgroundTsPath
       ],
       output: {
-        chunkFileNames: '[name].[hash].js',
         assetFileNames: '[name].[hash].[ext]',
-        entryFileNames: '[name].js',
-        dir: destName
+        chunkFileNames: '[name].[hash].js',
+        dir: destName,
+        entryFileNames: '[name].js'
       }
     }
   }

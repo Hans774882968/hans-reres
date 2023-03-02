@@ -1,13 +1,15 @@
-import React, { useContext } from 'react';
-import Modal from 'antd/es/modal';
+import { $gt } from '../i18n/i18n-init';
 import {
-  RequestMappingRule,
   FlatRequestMappingRule,
+  RequestMappingRule,
   transformIntoFlatRequestMappingRule,
   transformIntoRequestMappingRule
 } from '../utils';
-import AddRuleForm from './AddRuleForm';
 import { PopupContext } from './PopupApp';
+import { message } from 'antd';
+import AddRuleForm from './AddRuleForm';
+import Modal from 'antd/es/modal';
+import React, { useContext } from 'react';
 
 interface Props {
   visible: boolean
@@ -15,10 +17,16 @@ interface Props {
   setDialogVisible: (visible: boolean) => void
 }
 
+const EDIT_DIALOG_WIDTH = 700;
+const ANT_MODAL_CONTENT_PADDING = 24;
+const EDIT_FORM_WIDTH = EDIT_DIALOG_WIDTH - 2 * ANT_MODAL_CONTENT_PADDING;
+
 const EditRuleForm: React.FC<Props> = (props) => {
   const { hansReResMap, setHansReResMap } = useContext(PopupContext)!;
   const { visible, requestRule, setDialogVisible } = props;
   const flatRequestRule = transformIntoFlatRequestMappingRule(requestRule);
+  const editSuccessMessage = $gt('Edit Success❤');
+
   const handleSubmitSuccess = (newFlatRequestRule: FlatRequestMappingRule) => {
     const newHansReResMap = [...hansReResMap];
     const newRequestRule = transformIntoRequestMappingRule(newFlatRequestRule);
@@ -29,18 +37,19 @@ const EditRuleForm: React.FC<Props> = (props) => {
     }
     setHansReResMap(newHansReResMap);
     setDialogVisible(false);
+    message.success(editSuccessMessage);
   };
 
   return (
     <Modal
-      title="Edit Rule"
+      title={$gt('Edit Rule')}
       open={visible}
-      width={800}
+      width={EDIT_DIALOG_WIDTH}
       okButtonProps={{ style: { display: 'none' }}}
       cancelButtonProps={{ style: { display: 'none' }}}
       onCancel={() => setDialogVisible(false)}
     >
-      <AddRuleForm ruleToEdit={flatRequestRule} onFinish={handleSubmitSuccess} />
+      <AddRuleForm minWidth={EDIT_FORM_WIDTH} ruleToEdit={flatRequestRule} onFinish={handleSubmitSuccess} />
     </Modal>
   );
 };

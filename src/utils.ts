@@ -61,25 +61,25 @@ export const actionDefaultResultValueMap = {
 
 export function transformIntoRequestMappingRule (o: FlatRequestMappingRule): RequestMappingRule {
   const action: Action = (() => {
-    if (o.action === RewriteType.REDIRECT) return { type: o.action, res: o.res };
-    if (o.action === RewriteType.SET_UA) return { type: o.action, newUA: o.newUA };
-    return { type: o.action, name: o.name, value: o.value };
+    if (o.action === RewriteType.REDIRECT) return { res: o.res, type: o.action };
+    if (o.action === RewriteType.SET_UA) return { newUA: o.newUA, type: o.action };
+    return { name: o.name, type: o.action, value: o.value };
   })();
   return {
-    req: o.req,
+    action,
     checked: o.checked,
-    action
+    req: o.req
   };
 }
 
 export function transformIntoFlatRequestMappingRule (o: RequestMappingRule): FlatRequestMappingRule {
   const ret: FlatRequestMappingRule = {
-    req: o.req,
-    checked: o.checked,
     action: o.action.type,
-    res: '',
-    newUA: '',
+    checked: o.checked,
     name: '',
+    newUA: '',
+    req: o.req,
+    res: '',
     value: ''
   };
   return { ...ret, ...o.action };
@@ -126,17 +126,17 @@ export function getRedirectUrl (url: string, hansReResMap: RequestMappingRule[])
 }
 
 const typeMap = {
-  'txt': 'text/plain',
-  'html': 'text/html',
   'css': 'text/css',
+  'gif': 'image/gif',
+  'html': 'text/html',
+  'jpeg': 'image/jpeg',
+  'jpg': 'image/jpeg',
   'js': 'text/javascript',
   'json': 'text/json',
-  'xml': 'text/xml',
-  'jpg': 'image/jpeg',
-  'jpeg': 'image/jpeg',
-  'gif': 'image/gif',
   'png': 'image/png',
-  'webp': 'image/webp'
+  'txt': 'text/plain',
+  'webp': 'image/webp',
+  'xml': 'text/xml'
 };
 
 export function getLocalFileUrl (url: string) {

@@ -1,24 +1,26 @@
-import React, { useContext } from 'react';
-import Button from 'antd/es/button';
-import Form from 'antd/es/form';
-import Input from 'antd/es/input';
-import message from 'antd/es/message';
-import Tooltip from 'antd/es/tooltip';
-import Select from 'antd/es/select';
-import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined';
+import { $gt } from '../i18n/i18n-init';
 import {
-  actionDefaultResultValueMap,
   FlatRequestMappingRule,
+  RewriteType,
+  actionDefaultResultValueMap,
   getRedirectType,
   isSubSequence,
-  RewriteType,
   transformIntoRequestMappingRule
 } from '../utils';
 import { PopupContext } from './PopupApp';
+import Button from 'antd/es/button';
+import Form from 'antd/es/form';
+import Input from 'antd/es/input';
+import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined';
+import React, { useContext } from 'react';
+import Select from 'antd/es/select';
+import Tooltip from 'antd/es/tooltip';
+import message from 'antd/es/message';
 import styles from './AddRuleForm.module.less';
 
 interface Props {
   ruleToEdit: FlatRequestMappingRule | null
+  minWidth?: number
   onFinish?: (requestRule: FlatRequestMappingRule) => unknown
   showClearStorageBtn?: boolean
 }
@@ -37,7 +39,7 @@ const btnLayout = {
 };
 
 const redirectTypeIntro = 'Automatically detect the protocol of your response url, such as: http, file.';
-const reqUrlIntro = 'Request URL to redirect. It should be a regex.';
+const reqUrlIntro = 'Request URL to match. It should be a regex.';
 const respUrlIntro = 'Response URL. It can start with \'file://\' to represent a local file.';
 
 function getActionOptions () {
@@ -48,18 +50,28 @@ const AddRuleForm: React.FC<Props> = (props) => {
   const { hansReResMap, setHansReResMap, bg } = useContext(PopupContext)!;
 
   const initialRule: FlatRequestMappingRule = props.ruleToEdit || {
-    req: '.*hub\\.com',
-    checked: true,
     action: RewriteType.REDIRECT,
-    res: actionDefaultResultValueMap[RewriteType.REDIRECT].res,
-    newUA: '',
+    checked: true,
     name: '',
+    newUA: '',
+    req: '.*hub\\.com',
+    res: actionDefaultResultValueMap[RewriteType.REDIRECT].res,
     value: ''
   };
   const [addRuleForm] = Form.useForm<FlatRequestMappingRule>();
+  const requestURLShouldBeRegexMessage = $gt('Request url to be redirected should be a valid regex');
   const rules = {
+    action: [
+      { message: $gt('You should choose an action'), required: true }
+    ],
+    name: [
+      { message: $gt('param name should not be empty'), required: true }
+    ],
+    newUA: [
+      { message: $gt('New User Agent should not be empty'), required: true }
+    ],
     req: [
-      { required: true, message: 'Request url to be redirected should not be empty' },
+      { message: $gt('Request url to be redirected should not be empty'), required: true },
       {
         validator (rule: object, value: string) {
           return new Promise<void>((resolve, reject) => {
@@ -67,27 +79,18 @@ const AddRuleForm: React.FC<Props> = (props) => {
               new RegExp(value);
               resolve();
             } catch (e) {
-              reject('Request url to be redirected should be a valid regex');
+              reject(requestURLShouldBeRegexMessage);
             }
           });
         }
       }
     ],
-    action: [
-      { required: true, message: 'You should choose an action' }
-    ],
     res: [
-      { required: true, message: 'Response url should not be empty' },
-      { min: 4, message: 'Response url must be at least 4 characters' }
-    ],
-    newUA: [
-      { required: true, message: 'newUA should not be empty' }
-    ],
-    name: [
-      { required: true, message: 'param name should not be empty' }
+      { message: $gt('Response url should not be empty'), required: true },
+      { message: $gt('Response url must be at least 4 characters'), min: 4 }
     ],
     value: [
-      { required: true, message: 'param value should not be empty' }
+      { message: $gt('param value should not be empty'), required: true }
     ]
   };
   const requestRuleResultFieldValue = Form.useWatch('res', addRuleForm);
@@ -96,15 +99,18 @@ const AddRuleForm: React.FC<Props> = (props) => {
   const handleExpectedActionChange = (newAction: RewriteType) => {
     addRuleForm.setFieldsValue({ ...actionDefaultResultValueMap[newAction] });
   };
+  const saveToWindowLSMessage = $gt('Save rule to window.localStorage instead💔');
+  const saveSuccessMessage = $gt('Save Success❤');
+  const clearSuccessMessage = $gt('Clear success');
   const onFinish = props.onFinish || ((flatRequestRule: FlatRequestMappingRule) => {
     const newHansReResMap = [...hansReResMap];
     const requestRule = transformIntoRequestMappingRule(flatRequestRule);
     newHansReResMap.push(requestRule);
     setHansReResMap(newHansReResMap);
     if (!bg) {
-      message.warning('Save rule to window.localStorage instead💔');
+      message.warning(saveToWindowLSMessage);
     } else {
-      message.success('Save Success❤');
+      message.success(saveSuccessMessage);
     }
   });
   const onReset = () => {
@@ -112,23 +118,23 @@ const AddRuleForm: React.FC<Props> = (props) => {
   };
   const clearLocalStorage = () => {
     setHansReResMap([]);
-    message.success('Clear success');
+    message.success(clearSuccessMessage);
   };
 
   const reqUrlTooltip = (
     <>
-      <Tooltip placement="top" title={reqUrlIntro}>
+      <Tooltip placement="top" title={$gt(reqUrlIntro)}>
         <QuestionCircleOutlined className={styles['request-url-tooltip-icon']} />
       </Tooltip>
-      If URL match
+      {$gt('If URL match')}
     </>
   );
   const respUrlTooltip = (
     <>
-      <Tooltip placement="top" title={respUrlIntro}>
+      <Tooltip placement="top" title={$gt(respUrlIntro)}>
         <QuestionCircleOutlined className={styles['response-url-tooltip-icon']} />
       </Tooltip>
-      Response URL
+      {$gt('Response URL')}
     </>
   );
   const actionFieldMap = {
@@ -138,42 +144,42 @@ const AddRuleForm: React.FC<Props> = (props) => {
           <Input
             allowClear
             type="text"
-            placeholder="Input response url"
+            placeholder={$gt('Input response url')}
           />
         </Form.Item>
 
         <Form.Item
           {...redirectTypeLayout}
-          label="Redirect type"
+          label={$gt('Redirect Type')}
         >
           <span className={styles['redirect-type']}>
             {getRedirectType(requestRuleResultFieldValue)}
           </span>
-          <Tooltip placement="right" title={redirectTypeIntro}>
+          <Tooltip placement="right" title={$gt(redirectTypeIntro)}>
             <QuestionCircleOutlined />
           </Tooltip>
         </Form.Item>
       </>
     ),
     [RewriteType.SET_UA]: (
-      <Form.Item label="New User Agent" name="newUA" rules={rules.newUA}>
-        <Input.TextArea rows={2} placeholder="Input new user agent" />
+      <Form.Item label={$gt('New User Agent')} name="newUA" rules={rules.newUA}>
+        <Input.TextArea rows={2} placeholder={$gt('Input new User Agent')} />
       </Form.Item>
     ),
     [RewriteType.ADD_QUERY_PARAM]: (
       <>
-        <Form.Item label="Name" name="name" rules={rules.name}>
+        <Form.Item label={$gt('Name')} name="name" rules={rules.name}>
           <Input
             allowClear
             type="text"
-            placeholder="Input param name"
+            placeholder={$gt('Input param name')}
           />
         </Form.Item>
-        <Form.Item label="Value" name="value" rules={rules.value}>
+        <Form.Item label={$gt('Value')} name="value" rules={rules.value}>
           <Input
             allowClear
             type="text"
-            placeholder="Input param value"
+            placeholder={$gt('Input param value')}
           />
         </Form.Item>
       </>
@@ -181,7 +187,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
   };
 
   return (
-    <div className={styles['add-rule-form']}>
+    <div style={{ minWidth: props.minWidth }} className={styles['add-rule-form']}>
       <Form
         {...formLayout}
         form={addRuleForm}
@@ -194,13 +200,13 @@ const AddRuleForm: React.FC<Props> = (props) => {
           <Input
             allowClear
             type="text"
-            placeholder="Input request url to redirect"
+            placeholder={$gt('Input request url to match')!}
           />
         </Form.Item>
 
-        <Form.Item label="Action" name="action" rules={rules.action}>
+        <Form.Item label={$gt('Action')} name="action" rules={rules.action}>
           <Select
-            placeholder="Select action"
+            placeholder={$gt('Select action')}
             options={getActionOptions()}
             onChange={(newAction: RewriteType) => handleExpectedActionChange(newAction)}
             showSearch={true}
@@ -219,15 +225,15 @@ const AddRuleForm: React.FC<Props> = (props) => {
 
         <Form.Item {...btnLayout}>
           <Button className={styles['btn']} type="primary" htmlType="submit">
-            Submit
+            {$gt('Submit')}
           </Button>
           <Button className={styles['btn']} htmlType="button" onClick={onReset}>
-            Reset Form
+            {$gt('Reset Form')}
           </Button>
           {
             props.showClearStorageBtn ? (
               <Button className={styles['btn']} htmlType="button" onClick={clearLocalStorage}>
-                Clear localStorage
+                {$gt('Clear localStorage')}
               </Button>
             ) : null
           }
