@@ -6,10 +6,10 @@ import {
   transformIntoRequestMappingRule
 } from '../utils';
 import { PopupContext } from './PopupApp';
-import { message } from 'antd';
 import AddRuleForm from './AddRuleForm';
 import Modal from 'antd/es/modal';
 import React, { useContext } from 'react';
+import message from 'antd/es/message';
 
 interface Props {
   visible: boolean

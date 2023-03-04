@@ -43,6 +43,7 @@ module.exports = {
     ],
     '@typescript-eslint/no-empty-function': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-var-requires': 'warn',
     'arrow-spacing': ['error', { 'after': true, 'before': true }],
     'comma-dangle': ['error', 'never'],
     'comma-spacing': 'error',

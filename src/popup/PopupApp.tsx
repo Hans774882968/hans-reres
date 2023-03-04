@@ -15,7 +15,7 @@ export const PopupContext = createContext<{ hansReResMap: RequestMappingRule[], 
 
 enum ClassNamePrefix {
   DARK = 'custom-theme-dark',
-  DEFAULT='custom-theme-default'
+  DEFAULT = 'custom-theme-default'
 }
 
 export const ThemeContext = createContext<{ curClassNamePrefix: ClassNamePrefix, preferDarkTheme: boolean, setPreferDarkTheme(preferDarkTheme: boolean): void } | null>(null);

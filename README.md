@@ -135,6 +135,111 @@ vscode打开设置，再打开`settings.json`：
 
 若不生效，尝试重启vscode。
 
+## 配置postcss
+
+`react + vite`项目已经内置postcss，可以从`package-lock.json`中看出：
+
+```json
+    "vite": {
+      "requires": {
+        "esbuild": "^0.16.14",
+        // 省略其他
+        "postcss": "^8.4.21",
+      },
+      "dependencies": {
+        "rollup": {
+          "requires": {
+            "fsevents": "~2.3.2"
+          }
+        }
+      }
+    },
+```
+
+### postcss-preset-env
+
+装一下`postcss-preset-env`插件，这个插件支持css变量、一些未来css语法以及自动补全：
+
+```bash
+npm i postcss-preset-env -D
+```
+
+添加`postcss.config.cjs`：
+
+```js
+const postcssPresetEnv = require('postcss-preset-env');
+
+module.exports = {
+  plugins: [postcssPresetEnv()]
+};
+```
+
+配置`postcss-preset-env`插件前：
+
+```css
+._app_1afpm_1 {
+    padding: 20px;
+    user-select: none;
+}
+```
+
+配置该插件后：
+
+```css
+._app_1afpm_1 {
+    padding: 20px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+}
+```
+
+### flex-gap-polyfill
+
+这个插件的配置步骤和上面的一样，不赘述。
+
+代码：
+
+```css
+.app {
+  padding: 20px;
+  display: flex;
+  gap: 20px;
+}
+```
+
+效果：
+
+```css
+._app_13518_1 {
+    padding: 20px;
+    display: flex;
+    --fgp-gap: var(--has-fgp, 20px);
+    gap: 20px;
+    gap: var(--fgp-gap, 0px);
+    margin-top: var(--fgp-margin-top, var(--orig-margin-top));
+    margin-left: var(--fgp-margin-left, var(--orig-margin-left));
+}
+._app_13518_1 {
+    --has-fgp: ;
+    --element-has-fgp: ;
+    pointer-events: none;
+    pointer-events: var(--has-fgp) none;
+    --fgp-gap-row: 20px;
+    --fgp-gap-column: 20px;
+}
+._app_13518_1 {
+    --fgp-margin-top: var(--has-fgp) calc(var(--fgp-parent-gap-row, 0px) / (1 + var(--fgp--parent-gap-as-decimal, 0)) - var(--fgp-gap-row) + var(--orig-margin-top, 0px)) !important;
+    --fgp-margin-left: var(--has-fgp) calc(var(--fgp-parent-gap-column, 0px) / (1 + var(--fgp--parent-gap-as-decimal, 0)) - var(--fgp-gap-column) + var(--orig-margin-left, 0px)) !important;
+}
+```
+
+### flex-gap-polyfill踩坑
+
+但要注意`flex-gap-polyfill`使用上有些坑：
+
+1. 当你有这样的结构：`<div style="padding: 20px;"><div class="flex-and-gap"></div><div></div></div>`，那么`.flex-and-gap`会因为使用了**负margin**，导致它右侧的div**错位**。解决方案：在`.flex-and-gap`外面再套一层div，让`.flex-and-gap`的负margin不产生影响。
+
 ## 配置husky + commitlint
 
 根据[参考链接8](https://juejin.cn/post/6990307028162281508)
@@ -518,7 +623,52 @@ const changeLang = (langValue: string) => {
 
 ## 动态切换暗黑主题
 
-antd5提供了动态切换主题的能力。TODO
+根据[参考链接10](https://ant-design.gitee.io/docs/react/customize-theme-cn)，antd5提供了动态切换主题的能力，只需要使用`ConfigProvider`：
+
+```tsx
+import theme from 'antd/es/theme';
+import ConfigProvider from 'antd/es/config-provider';
+<ConfigProvider theme={{
+  algorithm: preferDarkTheme ? theme.darkAlgorithm : theme.defaultAlgorithm
+}}>
+    <MyComponents />
+</ConfigProvider>
+```
+
+使用预设算法是成本最低的方式，当然功能也最局限，我们就采用这种方式。
+
+首先需要一个bool来控制当前是暗色主题还是灰色主题：
+
+```tsx
+const [preferDarkTheme, setPreferDarkTheme] = useLocalStorageState('preferDarkTheme', {
+  defaultValue: true
+});
+```
+
+导航栏的开关只需要调用`setPreferDarkTheme`即可切换主题。
+
+另外，项目有一些组件没有用antd，不在预设算法的覆盖范围内，比如导航栏。不优美但肯定最简单的解决方案就是：我们在根组件定义各个主题的类名prefix：
+
+```ts
+enum ClassNamePrefix {
+  DARK = 'custom-theme-dark',
+  DEFAULT = 'custom-theme-default'
+}
+const curClassNamePrefix = preferDarkTheme ? ClassNamePrefix.DARK : ClassNamePrefix.DEFAULT;
+```
+
+然后通过Context传给子组件：
+
+```tsx
+<ThemeContext.Provider value={{ curClassNamePrefix, preferDarkTheme, setPreferDarkTheme }}>
+</ThemeContext.Provider>
+```
+
+子组件直接消费即可：
+
+```tsx
+<Row className={styles[`${curClassNamePrefix}-navbar`]} />
+```
 
 ## 数据结构设计
 
@@ -682,3 +832,4 @@ export function transformIntoFlatRequestMappingRule (o: RequestMappingRule): Fla
 7. https://stackoverflow.com/questions/27688804/how-do-i-debug-error-spawn-enoent-on-node-js
 8. 使用commitlint规范commit格式：https://juejin.cn/post/6990307028162281508
 9. https://juejin.cn/post/7139855730105942030
+10. antd5定制主题官方文档：https://ant-design.gitee.io/docs/react/customize-theme-cn

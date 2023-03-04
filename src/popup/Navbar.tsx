@@ -17,9 +17,12 @@ const Navbar: React.FC = () => {
   return (
     <header>
       <Row className={styles[`${curClassNamePrefix}-navbar`]}>
-        <Col span={6} className={styles['navbar-col']}>
-          <img src={icon48} alt="icon48.png" />
-          <span className={styles[`${curClassNamePrefix}-plugin-name`]}>hans-reres</span>
+        <Col span={6}>
+          {/* 多套一层div，修复 flex-gap-polyfill 导致同一行右侧的元素产生偏移的bug */}
+          <div className={styles['navbar-col']}>
+            <img src={icon48} alt="icon48.png" />
+            <span className={styles[`${curClassNamePrefix}-plugin-name`]}>hans-reres</span>
+          </div>
         </Col>
 
         <Col className={styles['navbar-col']}>
