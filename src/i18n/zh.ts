@@ -6,11 +6,17 @@ export default {
   Edit: '编辑',
   'Edit Rule': '编辑规则',
   ['Edit Success❤']: '编辑成功❤',
+  'Field name should not be empty': '“键”字段不应为空',
+  'Field value should not be empty': '“值”字段不应为空',
   'If URL match': '待匹配的请求url',
   'Input new User Agent': '输入新的User Agent',
   'Input param name': '输入param键',
   'Input param value': '输入param值',
+  'Input request header key': '输入请求头的键',
+  'Input request header value': '输入请求头的值',
   'Input request url to match': '输入待匹配的请求url',
+  'Input response header key': '输入响应头的键',
+  'Input response header value': '输入响应头的值',
   'Input response url': '输入响应url',
   Name: '键',
   'New User Agent': 'User Agent修改为',
@@ -32,7 +38,5 @@ export default {
   'Select language': '选择语言',
   Submit: '提交',
   Value: '值',
-  'You should choose an action': '你应该选择一个操作',
-  'param name should not be empty': 'param键不应为空',
-  'param value should not be empty': 'param值不应为空'
+  'You should choose an action': '你应该选择一个操作'
 };

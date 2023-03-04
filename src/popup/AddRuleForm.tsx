@@ -3,11 +3,13 @@ import {
   FlatRequestMappingRule,
   RewriteType,
   actionDefaultResultValueMap,
-  getRedirectType,
-  isSubSequence,
   transformIntoRequestMappingRule
-} from '../utils';
+} from '../action-types';
 import { PopupContext } from './PopupApp';
+import {
+  getRedirectType,
+  isSubSequence
+} from '../utils';
 import Button from 'antd/es/button';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
@@ -65,7 +67,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
       { message: $gt('You should choose an action'), required: true }
     ],
     name: [
-      { message: $gt('param name should not be empty'), required: true }
+      { message: $gt('Field name should not be empty'), required: true }
     ],
     newUA: [
       { message: $gt('New User Agent should not be empty'), required: true }
@@ -90,7 +92,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
       { message: $gt('Response url must be at least 4 characters'), min: 4 }
     ],
     value: [
-      { message: $gt('param value should not be empty'), required: true }
+      { message: $gt('Field value should not be empty'), required: true }
     ]
   };
   const requestRuleResultFieldValue = Form.useWatch('res', addRuleForm);
@@ -137,6 +139,38 @@ const AddRuleForm: React.FC<Props> = (props) => {
       {$gt('Response URL')}
     </>
   );
+  function getNameValueFormFields (nameFieldPlaceholder: string, valueFieldPlaceholder: string) {
+    return (
+      <>
+        <Form.Item label={$gt('Name')} name="name" rules={rules.name}>
+          <Input
+            allowClear
+            type="text"
+            placeholder={nameFieldPlaceholder}
+          />
+        </Form.Item>
+
+        <Form.Item label={$gt('Value')} name="value" rules={rules.value}>
+          <Input
+            allowClear
+            type="text"
+            placeholder={valueFieldPlaceholder}
+          />
+        </Form.Item>
+      </>
+    );
+  }
+  function getNameFormField (nameFieldPlaceholder: string) {
+    return (
+      <Form.Item label={$gt('Name')} name="name" rules={rules.name}>
+        <Input
+          allowClear
+          type="text"
+          placeholder={nameFieldPlaceholder}
+        />
+      </Form.Item>
+    );
+  }
   const actionFieldMap = {
     [RewriteType.REDIRECT]: (
       <>
@@ -166,24 +200,28 @@ const AddRuleForm: React.FC<Props> = (props) => {
         <Input.TextArea rows={2} placeholder={$gt('Input new User Agent')} />
       </Form.Item>
     ),
-    [RewriteType.ADD_QUERY_PARAM]: (
-      <>
-        <Form.Item label={$gt('Name')} name="name" rules={rules.name}>
-          <Input
-            allowClear
-            type="text"
-            placeholder={$gt('Input param name')}
-          />
-        </Form.Item>
-        <Form.Item label={$gt('Value')} name="value" rules={rules.value}>
-          <Input
-            allowClear
-            type="text"
-            placeholder={$gt('Input param value')}
-          />
-        </Form.Item>
-      </>
-    )
+    [RewriteType.BLOCK_REQUEST]: null,
+    [RewriteType.ADD_QUERY_PARAM]: getNameValueFormFields(
+      $gt('Input param name'), $gt('Input param value')
+    ),
+    [RewriteType.MODIFY_QUERY_PARAM]: getNameValueFormFields(
+      $gt('Input param name'), $gt('Input param value')
+    ),
+    [RewriteType.DELETE_QUERY_PARAM]: getNameFormField($gt('Input param name')),
+    [RewriteType.ADD_REQ_HEADER]: getNameValueFormFields(
+      $gt('Input request header key'), $gt('Input request header value')
+    ),
+    [RewriteType.MODIFY_REQ_HEADER]: getNameValueFormFields(
+      $gt('Input request header key'), $gt('Input request header value')
+    ),
+    [RewriteType.DELETE_REQ_HEADER]: getNameFormField($gt('Input request header key')),
+    [RewriteType.ADD_RESP_HEADER]: getNameValueFormFields(
+      $gt('Input response header key'), $gt('Input response header value')
+    ),
+    [RewriteType.MODIFY_RESP_HEADER]: getNameValueFormFields(
+      $gt('Input response header key'), $gt('Input response header value')
+    ),
+    [RewriteType.DELETE_RESP_HEADER]: getNameFormField($gt('Input response header key'))
   };
 
   return (
@@ -208,7 +246,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
           <Select
             placeholder={$gt('Select action')}
             options={getActionOptions()}
-            onChange={(newAction: RewriteType) => handleExpectedActionChange(newAction)}
+            onChange={handleExpectedActionChange}
             showSearch={true}
             optionFilterProp="children"
             filterOption={(input, option) => isSubSequence(option ? option.label : '', input)}

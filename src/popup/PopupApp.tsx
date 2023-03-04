@@ -1,4 +1,5 @@
-import { RequestMappingRule, hansReResMapName } from '../utils';
+import { RequestMappingRule } from '../action-types';
+import { hansReResMapName } from '../utils';
 import AddRuleForm from './AddRuleForm';
 import ConfigProvider from 'antd/es/config-provider';
 import Layout from 'antd/es/layout';

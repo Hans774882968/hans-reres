@@ -6,11 +6,17 @@ export default {
   Edit: 'Edit',
   'Edit Rule': 'Edit Rule',
   ['Edit Success❤']: 'Edit Success❤',
+  'Field name should not be empty': 'Field name should not be empty',
+  'Field value should not be empty': 'Field value should not be empty',
   'If URL match': 'If URL match',
   'Input new User Agent': 'Input new User Agent',
   'Input param name': 'Input param name',
   'Input param value': 'Input param value',
+  'Input request header key': 'Input request header key',
+  'Input request header value': 'Input request header value',
   'Input request url to match': 'Input request url to match',
+  'Input response header key': 'Input response header key',
+  'Input response header value': 'Input response header value',
   'Input response url': 'Input response url',
   Name: 'Name',
   'New User Agent': 'New User Agent',
@@ -32,7 +38,5 @@ export default {
   'Select language': 'Select language',
   Submit: 'Submit',
   Value: 'Value',
-  'You should choose an action': 'You should choose an action',
-  'param name should not be empty': 'param name should not be empty',
-  'param value should not be empty': 'param value should not be empty'
+  'You should choose an action': 'You should choose an action'
 };

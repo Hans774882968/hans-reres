@@ -1,6 +1,6 @@
 import { $gt } from '../i18n/i18n-init';
 import { PopupContext, ThemeContext } from './PopupApp';
-import { RequestMappingRule, RewriteType, actionDefaultResultValueMap } from '../utils';
+import { RequestMappingRule, RewriteType, actionDefaultResultValueMap } from '../action-types';
 import Button from 'antd/es/button';
 import Checkbox from 'antd/es/checkbox';
 import EditRuleForm from './EditRuleForm';

@@ -4,7 +4,7 @@ import {
   RequestMappingRule,
   transformIntoFlatRequestMappingRule,
   transformIntoRequestMappingRule
-} from '../utils';
+} from '../action-types';
 import { PopupContext } from './PopupApp';
 import AddRuleForm from './AddRuleForm';
 import Modal from 'antd/es/modal';

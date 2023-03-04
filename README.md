@@ -239,6 +239,7 @@ module.exports = {
 但要注意`flex-gap-polyfill`使用上有些坑：
 
 1. 当你有这样的结构：`<div style="padding: 20px;"><div class="flex-and-gap"></div><div></div></div>`，那么`.flex-and-gap`会因为使用了**负margin**，导致它右侧的div**错位**。解决方案：在`.flex-and-gap`外面再套一层div，让`.flex-and-gap`的负margin不产生影响。
+2. 打包体积增大。在只使用了3处`flex-gap`的情况下，css大小`3.17kb -> 11.0kb`。
 
 ## 配置husky + commitlint
 

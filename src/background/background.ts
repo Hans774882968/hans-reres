@@ -1,8 +1,7 @@
+import { RequestMappingRule, isSetUAAction } from '../action-types';
 import {
-  RequestMappingRule,
   getRedirectUrl,
-  hansReResMapName,
-  isSetUAAction
+  hansReResMapName
 } from '../utils';
 
 function getMapFromLocalStorage (): RequestMappingRule[] {

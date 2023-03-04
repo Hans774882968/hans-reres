@@ -1,4 +1,5 @@
-import { RewriteType, getRedirectUrl } from '../src/utils';
+import { RewriteType } from '../src/action-types';
+import { getRedirectUrl } from '../src/utils';
 import xhr from '../src/xhr';
 
 jest.mock('../src/xhr', () => {
