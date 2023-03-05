@@ -1,21 +1,32 @@
 import chalk from 'chalk';
+import process from 'process';
 import spawn from 'cross-spawn';
 
 function displayTime (time: number) {
   return (time / 1000).toFixed(2);
 }
 
+// use "npm run build -- skip-lints" to skip lints
+function shouldSkipLints () {
+  const args = process.argv;
+  const [,, skipLints] = args;
+  return skipLints && skipLints.toLowerCase() === 'skip-lints';
+}
+
 function main () {
+  const skipLints = shouldSkipLints();
   const startTime = new Date().valueOf();
   // npm run lint会返回失败码，这里直接忽略
   const lintCmds = ['npm run lint:s', 'npm run lint'];
   const lintDurations: string[] = [];
-  lintCmds.forEach((lintCmd) => {
-    const startTime = new Date().valueOf();
-    console.log(chalk.greenBright(lintCmd));
-    spawn.sync(lintCmd, [], { stdio: 'inherit' });
-    lintDurations.push(displayTime(new Date().valueOf() - startTime));
-  });
+  if (!skipLints) {
+    lintCmds.forEach((lintCmd) => {
+      const startTime = new Date().valueOf();
+      console.log(chalk.greenBright(lintCmd));
+      spawn.sync(lintCmd, [], { stdio: 'inherit' });
+      lintDurations.push(displayTime(new Date().valueOf() - startTime));
+    });
+  }
   const cmds = [
     'npx tsc',
     'npx vite build',
@@ -31,9 +42,13 @@ function main () {
     return;
   }
   const duration = displayTime(new Date().valueOf() - startTime);
-  lintDurations.forEach((lintDuration, i) => {
-    console.log(`✨  ${lintCmds[i]}`, chalk.greenBright(`'s duration: ${lintDuration}s`));
-  });
+  if (!skipLints) {
+    lintDurations.forEach((lintDuration, i) => {
+      console.log(`✨  ${lintCmds[i]}`, chalk.greenBright(`'s duration: ${lintDuration}s`));
+    });
+  } else {
+    console.log(chalk.greenBright('✨  lints skipped~'));
+  }
   console.log(chalk.greenBright(`✨  Done in ${duration}s.`));
 }
 

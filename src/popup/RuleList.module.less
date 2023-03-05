@@ -15,6 +15,8 @@
       cursor: pointer;
       display: flex;
       gap: 12px;
+      // 父元素也要加 hidden 修复长url导致溢出的bug
+      overflow: hidden;
 
       /* 这3条属性应该直接作用于text node的parent */
       .req {

@@ -1,7 +1,27 @@
 import {
+  ActionDescription,
+  HeadersMap,
+  MockHttpHeader,
+  ProcessHeadersReturn,
+  QueryParamAction,
+  ReqHeaderAction,
   RequestMappingRule,
+  RespHeaderAction,
   isAddQueryParamAction,
-  isRedirectAction
+  isAddReqHeaderAction,
+  isAddRespHeaderAction,
+  isBlockRequestAction,
+  isDeleteQueryParamAction,
+  isDeleteReqHeaderAction,
+  isDeleteRespHeaderAction,
+  isModifyQueryParamAction,
+  isModifyReqHeaderAction,
+  isModifyRespHeaderAction,
+  isQueryParamAction,
+  isRedirectAction,
+  isReqHeaderAction,
+  isRespHeaderAction,
+  isSetUAAction
 } from './action-types';
 import xhr from './xhr';
 
@@ -14,37 +34,131 @@ export const getRedirectType = (res: string) => {
   return 'http';
 };
 
-export function getRedirectUrl (url: string, hansReResMap: RequestMappingRule[]) {
+export function filterRulesForHeaderListener (url: string, hansReResMap: RequestMappingRule[]) {
+  return hansReResMap
+    .filter((requestRule) => requestRule.checked)
+    .filter((requestRule) => {
+      const reg = new RegExp(requestRule.req, 'gi');
+      return reg.test(url);
+    });
+}
+
+export function mapToHttpHeaderArray (mp: HeadersMap): MockHttpHeader[] {
+  return [...mp.entries()].map(([name, value]) => ({ name, value }));
+}
+
+export function getHeadersMap (headers: MockHttpHeader[]) {
+  return new Map(headers.map(header => [header.name, header.value || '']));
+}
+
+export function modifyHeaders (headersMap: HeadersMap, action: ReqHeaderAction | RespHeaderAction) {
+  if (isAddReqHeaderAction(action) || isAddRespHeaderAction(action)) {
+    headersMap.set(action.name, action.value);
+  }
+  if ((isModifyReqHeaderAction(action) || isModifyRespHeaderAction(action)) && headersMap.has(action.name)) {
+    headersMap.set(action.name, action.value);
+  }
+  if (isDeleteReqHeaderAction(action) || isDeleteRespHeaderAction(action)) {
+    headersMap.delete(action.name);
+  }
+}
+
+export function modifyQueryParams (queryParams: URLSearchParams, action: QueryParamAction) {
+  if (isAddQueryParamAction(action)) {
+    queryParams.set(action.name, action.value);
+  }
+  if (isModifyQueryParamAction(action) && queryParams.has(action.name)) {
+    queryParams.set(action.name, action.value);
+  }
+  if (isDeleteQueryParamAction(action)) {
+    queryParams.delete(action.name);
+  }
+}
+
+// 约定： requestRules 是 filterRulesForHeaderListener 筛过的
+export function processHeaders (
+  requestRules: RequestMappingRule[],
+  headersMap: HeadersMap,
+  isRequest: boolean
+) {
+  const returnObject: ProcessHeadersReturn = {
+    headersModified: false,
+    requestHeadersMap: isRequest ? headersMap : new Map<string, string>(),
+    responseHeadersMap: !isRequest ? headersMap : new Map<string, string>()
+  };
+  requestRules.forEach((requestRule) => {
+    const action = requestRule.action;
+    if (!isReqHeaderAction(action) && !isRespHeaderAction(action)) return;
+    const modifyObject = isReqHeaderAction(action) ? returnObject.requestHeadersMap : returnObject.responseHeadersMap;
+    modifyHeaders(modifyObject, action);
+    returnObject.headersModified = true;
+  });
+  return returnObject;
+}
+
+export function processUserAgent (
+  requestRules: RequestMappingRule[],
+  headersMap: HeadersMap,
+  requestHeaders: MockHttpHeader[]
+) {
+  const returnObject: ProcessHeadersReturn = {
+    headersModified: false,
+    requestHeadersMap: headersMap,
+    responseHeadersMap: new Map<string, string>()
+  };
+  requestHeaders.forEach((header) => {
+    if (header.name.toLowerCase() !== 'user-agent') return;
+    requestRules.forEach((requestRule) => {
+      const action = requestRule.action;
+      if (!isSetUAAction(action)) return;
+      headersMap.set(header.name, action.newUA);
+      returnObject.headersModified = true;
+    });
+  });
+  return returnObject;
+}
+
+export function processRequest (url: string, hansReResMap: RequestMappingRule[]): ActionDescription {
+  const urlObject = new URL(url);
+  const actionDescription: ActionDescription = {
+    queryParams: new URLSearchParams(urlObject.search),
+    urlObject
+  };
   let redirectUrl = url;
 
   hansReResMap
     .filter((requestRule) => requestRule.checked)
     .forEach((requestRule) => {
+      /* TODO：这里是用不断迭代的 redirectUrl 来过滤的，所以cancel的规则出现在重定向的规则之后，
+       *  就可能被忽略。改成和request-interceptor一样，用标签页url来过滤，就没有这个奇怪的feature了。
+       */
       const reg = new RegExp(requestRule.req, 'gi');
       if (!reg.test(redirectUrl)) return;
 
-      if (isRedirectAction(requestRule.action)) {
-        if (/^file:\/\//.test(requestRule.action.res)) {
+      const action = requestRule.action;
+      if (isBlockRequestAction(action)) {
+        actionDescription.cancel = true;
+      }
+      if (isRedirectAction(action)) {
+        if (/^file:\/\//.test(action.res)) {
           do {
-            redirectUrl = redirectUrl.replace(reg, requestRule.action.res);
+            redirectUrl = redirectUrl.replace(reg, action.res);
             redirectUrl = getLocalFileUrl(redirectUrl);
           } while (reg.test(redirectUrl));
         } else {
           do {
-            redirectUrl = redirectUrl.replace(reg, requestRule.action.res);
+            redirectUrl = redirectUrl.replace(reg, action.res);
           } while (reg.test(redirectUrl));
         }
+        actionDescription.redirectUrl = redirectUrl;
       }
-      if (isAddQueryParamAction(requestRule.action)) {
-        const urlObj = new URL(redirectUrl);
-        const queryParams = urlObj.searchParams;
-        queryParams.set(requestRule.action.name, requestRule.action.value);
-        urlObj.search = queryParams.toString();
-        redirectUrl = urlObj.toString();
+      if (isQueryParamAction(action)) {
+        modifyQueryParams(actionDescription.queryParams, action);
+        actionDescription.queryParamsModified = true;
       }
     });
 
-  return redirectUrl;
+  return actionDescription;
 }
 
 const typeMap = {

@@ -57,6 +57,8 @@ export interface DeleteQueryParamAction extends Action {
   name: string
 }
 
+export type QueryParamAction = AddQueryParamAction | ModifyQueryParamAction | DeleteQueryParamAction;
+
 export interface AddReqHeaderAction extends Action {
   name: string
   value: string
@@ -71,6 +73,8 @@ export interface DeleteReqHeaderAction extends Action {
   name: string
 }
 
+export type ReqHeaderAction = AddReqHeaderAction | ModifyReqHeaderAction | DeleteReqHeaderAction;
+
 export interface AddRespHeaderAction extends Action {
   name: string
   value: string
@@ -84,6 +88,8 @@ export interface ModifyRespHeaderAction extends Action {
 export interface DeleteRespHeaderAction extends Action {
   name: string
 }
+
+export type RespHeaderAction = AddRespHeaderAction | ModifyRespHeaderAction | DeleteRespHeaderAction;
 
 export function isRedirectAction (o: Action): o is RedirectAction {
   return o.type === RewriteType.REDIRECT;
@@ -109,6 +115,12 @@ export function isDeleteQueryParamAction (o: Action): o is DeleteQueryParamActio
   return o.type === RewriteType.DELETE_QUERY_PARAM;
 }
 
+export function isQueryParamAction (o: Action): o is QueryParamAction {
+  return isAddQueryParamAction(o) ||
+    isModifyQueryParamAction(o) ||
+    isDeleteQueryParamAction(o);
+}
+
 export function isAddReqHeaderAction (o: Action): o is AddReqHeaderAction {
   return o.type === RewriteType.ADD_REQ_HEADER;
 }
@@ -121,6 +133,12 @@ export function isDeleteReqHeaderAction (o: Action): o is DeleteReqHeaderAction 
   return o.type === RewriteType.DELETE_REQ_HEADER;
 }
 
+export function isReqHeaderAction (o: Action): o is ReqHeaderAction {
+  return isAddReqHeaderAction(o) ||
+    isModifyReqHeaderAction(o) ||
+    isDeleteReqHeaderAction(o);
+}
+
 export function isAddRespHeaderAction (o: Action): o is AddRespHeaderAction {
   return o.type === RewriteType.ADD_RESP_HEADER;
 }
@@ -131,6 +149,12 @@ export function isModifyRespHeaderAction (o: Action): o is ModifyRespHeaderActio
 
 export function isDeleteRespHeaderAction (o: Action): o is DeleteRespHeaderAction {
   return o.type === RewriteType.DELETE_RESP_HEADER;
+}
+
+export function isRespHeaderAction (o: Action): o is RespHeaderAction {
+  return isAddRespHeaderAction(o) ||
+    isModifyRespHeaderAction(o) ||
+    isDeleteRespHeaderAction(o);
 }
 
 export const actionDefaultResultValueMap = {
@@ -172,4 +196,26 @@ export function transformIntoFlatRequestMappingRule (o: RequestMappingRule): Fla
     value: ''
   };
   return { ...ret, ...o.action };
+}
+
+export interface ActionDescription {
+  cancel?: boolean
+  redirectUrl?: string
+  queryParamsModified?: boolean
+  urlObject: URL
+  queryParams: URLSearchParams
+}
+
+export type HeadersMap = Map<string, string>;
+
+export interface ProcessHeadersReturn {
+  headersModified: boolean
+  requestHeadersMap: HeadersMap
+  responseHeadersMap: HeadersMap
+}
+
+export interface MockHttpHeader {
+  name: string;
+  value?: string | undefined;
+  binaryValue?: ArrayBuffer | undefined;
 }

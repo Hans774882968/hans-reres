@@ -38,6 +38,7 @@ const isExtensionEnabled = () => dataSet?.uiSettings?.isExtensionEnabled;
 
 const isRuleGroupEnabled = rg => rg && rg.enabled;
 
+// HttpHeader[]转Map
 const getHeadersMap = headers => {
   if (!headers) {
     return new Map();
@@ -47,6 +48,7 @@ const getHeadersMap = headers => {
   );
 };
 
+// 把Map转回HttpHeader[]
 const toArrayOfHeaderObjects = headersMap => {
   const h = [];
   for (let entry of headersMap.entries()) {
@@ -269,7 +271,7 @@ const processRequest = details => {
   }
 
   const url = new URL(details.url);
-  // queryParams用于query-param增删改
+  // queryParams用于query-param增删改；与url.searchParams不同
   const retObj = {
     queryParams: new URLSearchParams(url.search)
   };
@@ -294,12 +296,14 @@ const processRequestHeadersListener = details => {
   if (!isExtensionEnabled()) {
     return;
   }
+  // details.requestHeaders被转为一个Map
   const retObj = {
     requestHeaders: getHeadersMap(details.requestHeaders)
   };
 
   applyRuleGroups(dataSet.ruleGroups, details, retObj);
 
+  // 把Map转回HttpHeader[]
   if (retObj.requestHeadersModified) {
     return { requestHeaders: toArrayOfHeaderObjects(retObj.requestHeaders) };
   }
