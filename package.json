@@ -2,7 +2,7 @@
   "name": "hans-reres",
   "private": true,
   "version": "0.0.0",
-  "description": "hans-reres旨在用前端工程化技术栈复现ReRes。ReRes是JS逆向工程师常用工具，可以用来更改页面请求响应的内容。通过指定规则，您可以把请求映射到其他的url，也可以映射到本机的文件或者目录。ReRes支持单个url映射，也支持目录映射。",
+  "description": "hans-reres旨在用前端工程化技术栈复现ReRes和request-interceptor。request-interceptor是前端开发调试常用工具，提供了多种修改请求的功能，但无法将请求映射到本地的文件。ReRes是JS逆向工程师常用工具，可以用来更改页面请求响应的内容。通过指定规则，您可以把请求映射到其他的url，也可以映射到本机的文件或者目录。ReRes支持单个url映射，也支持目录映射。",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -1,14 +1,108 @@
 [TOC]
 
+## 引言
+
+[这个项目](https://github.com/Hans774882968/hans-reres)主要目的是用前端工程化技术栈复现`ReRes`和`request-interceptor`，希望将两者的功能结合起来。`request-interceptor`是前端开发调试常用工具，提供了多种修改请求的功能，但无法将请求映射到本地的文件。`ReRes`是JS逆向工程师常用工具，可以用来更改页面请求响应的内容。可以把请求映射到其他的url，也可以映射到本机的文件或者目录。因为`manifest version 3`无法实现这两个插件的功能，所以这个项目仍然使用`manifest version 2`。本文假设你了解：
+
+- Chrome插件开发的`manifest.json`常见字段，尤其是`browser_action`（`popup`页面）、`options_page`（`options`页面，扩展程序选项）和`background`（`background.js`）。
+
+修改请求的代码都是在`background.js`中实现的。`background.js`实际上也在一个独立的页面运行。在`chrome://extensions/`点击插件的“背景页”链接即可对`background.js`进行调试。
+
+## Chrome插件ReRes源码赏析
+
+`popup`页面和`options`页面和`background.js`唯一的联系就是，其他页面需要将数据写入背景页的`localStorage`：
+
+```js
+    var bg = chrome.extension.getBackgroundPage();
+
+    //保存规则数据到localStorage
+    function saveData() {
+        $scope.rules = groupBy($scope.maps, 'group');
+        bg.localStorage.ReResMap = angular.toJson($scope.maps);
+    }
+```
+
+`background.js`注释版源码：
+
+```js
+var ReResMap = [];
+var typeMap = {
+    "txt"   : "text/plain",
+    "html"  : "text/html",
+    "css"   : "text/css",
+    "js"    : "text/javascript",
+    "json"  : "text/json",
+    "xml"   : "text/xml",
+    "jpg"   : "image/jpeg",
+    "gif"   : "image/gif",
+    "png"   : "image/png",
+    "webp"  : "image/webp"
+}
+// 从背景页的localStorage读取ReResMap
+function getLocalStorage() {
+    ReResMap = window.localStorage.ReResMap ? JSON.parse(window.localStorage.ReResMap) : ReResMap;
+}
+
+// xhr请求本地文件的url，进行文本拼接，转为data url
+function getLocalFileUrl(url) {
+    var arr = url.split('.');
+    var type = arr[arr.length-1];
+    var xhr = new XMLHttpRequest();
+    xhr.open('get', url, false);
+    xhr.send(null);
+    var content = xhr.responseText || xhr.responseXML;
+    if (!content) {
+        return false;
+    }
+    content = encodeURIComponent(
+        type === 'js' ?
+        content.replace(/[\u0080-\uffff]/g, function($0) {
+            var str = $0.charCodeAt(0).toString(16);
+            return "\\u" + '00000'.substr(0, 4 - str.length) + str;
+        }) : content
+    );
+    return ("data:" + (typeMap[type] || typeMap.txt) + ";charset=utf-8," + content);
+}
+
+// 看MDN即可，https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/onBeforeRequest
+chrome.webRequest.onBeforeRequest.addListener(function (details) {
+        // 这个url会在循环中被修改
+        var url = details.url;
+        for (var i = 0, len = ReResMap.length; i < len; i++) {
+            var reg = new RegExp(ReResMap[i].req, 'gi');
+            if (ReResMap[i].checked && typeof ReResMap[i].res === 'string' && reg.test(url)) {
+                if (!/^file:\/\//.test(ReResMap[i].res)) {
+                    // 普通url，只进行正则替换
+                    do {
+                        url = url.replace(reg, ReResMap[i].res);
+                    } while (reg.test(url))
+                } else {
+                    do {
+                        // file协议url，先正则替换，再转为data url
+                        url = getLocalFileUrl(url.replace(reg, ReResMap[i].res));
+                    } while (reg.test(url))
+                }
+            }
+        }
+        return url === details.url ? {} : { redirectUrl: url };
+    },
+    {urls: ["<all_urls>"]},
+    ["blocking"]
+);
+
+getLocalStorage();
+window.addEventListener('storage', getLocalStorage, false);
+```
+
 ## Chrome插件request-interceptor background.js源码赏析
 
 **`request-interceptor`**作者说没有开源，但我们仍然能轻易找到其`background.js`地址。~~幸好没有特意进行混淆~~
 
 1. 安装插件。
-2. 执行命令：`open ~/Library/Application\ Support/Google/Chrome/Default/Extensions`。
+2. 以macOS为例，执行命令：`open ~/Library/Application\ Support/Google/Chrome/Default/Extensions`，打开Chrome插件安装路径。
 3. 根据插件ID找到对应的文件夹。
 
-如何获得**`request-interceptor`**的`background.js`所使用的数据结构：根据源码，只需要在`background.js`控制台运行以下代码即可：
+如何获得**`request-interceptor`**的`background.js`所使用的数据结构：阅读源码后知道，只需要在`background.js`控制台运行以下代码即可：
 
 ```js
 let dataSet1 = {};
@@ -484,7 +578,7 @@ npm install ts-jest ts-node -D
 
 ## 构建流程
 
-我们需要打包出`manifest.json`；`popup.html`及其配套CSS、JS；`options.html`及其配套CSS、JS；`background.js`；静态资源。这就是一个典型Chrome插件的构成。下面列举遇到的几个基本问题和解决方案：
+《技术选型》一节提到，我们需要打包出`manifest.json`；`popup.html`及其配套CSS、JS；`options.html`及其配套CSS、JS；`background.js`；静态资源。这就是一个典型Chrome插件的构成。我们需要设计一个构建流程，生成上述产物。下面列举我遇到的几个基本问题和解决方案：
 
 1. 静态资源：直接用`rollup-plugin-copy`复制到`manifest.json`定义的位置即可。
 2. `manifest.json`需要修改某些字段：`vite`没有loader的概念，所以需要想其他办法。可以尝试构造一个专门`import 'xx.json'`导入json文件的入口ts文件，然后匹配`xx.json`进行处理，但这种写法获得的文件内容，是json文本转化为js对象的结果，不是很简洁。最终我的做法是：在`writeBundle`阶段，先读入`manifest.json`，再进行修改，最后写入目标位置，类似于`rollup-plugin-copy`。[代码实现传送门](https://github.com/Hans774882968/hans-reres/blob/main/plugins/transform-manifest-plugin.ts)
@@ -492,11 +586,11 @@ npm install ts-jest ts-node -D
 
 至此，Chrome插件开发与普通的~~🐓⌨️🍚~~前端开发没有任何区别。
 
-### 输出构建耗时
+### shell脚本：输出构建耗时
 
 令人震惊的是，vite缺乏一个输出构建耗时的可靠插件（0 star的插件还是有的）！这个小需求可以自己写vite插件来解决，也可以用一个更简单的方式来解决：写一个shell脚本。
 
-我们在配置jest时安装了`ts-node`，因此这里可以直接写ts脚本。`scripts/build.ts`：
+我们在配置jest时安装了`ts-node`，因此这里可以直接写ts脚本。`scripts/build.ts`[传送门](https://github.com/Hans774882968/hans-reres/blob/main/scripts/build.ts)：
 
 ```ts
 import spawn from 'cross-spawn';
@@ -636,7 +730,7 @@ import ConfigProvider from 'antd/es/config-provider';
 </ConfigProvider>
 ```
 
-使用预设算法是成本最低的方式，当然功能也最局限，我们就采用这种方式。
+使用预设算法是成本最低的方式，当然功能也最局限。为简单起见，我们就采用这种方式。
 
 首先需要一个bool来控制当前是暗色主题还是灰色主题：
 
@@ -671,7 +765,7 @@ const curClassNamePrefix = preferDarkTheme ? ClassNamePrefix.DARK : ClassNamePre
 <Row className={styles[`${curClassNamePrefix}-navbar`]} />
 ```
 
-## 数据结构设计
+## 插件核心功能：数据结构设计
 
 我们希望这个插件支持：
 
@@ -682,7 +776,7 @@ const curClassNamePrefix = preferDarkTheme ? ClassNamePrefix.DARK : ClassNamePre
 - 拦截请求。
 - ……
 
-拟定这些需求是参考了Chrome插件`request-interceptor`的`background.js`的部分代码，如下：
+拟定这些需求是参考了Chrome插件`request-interceptor`的`background.js`的核心代码，如下：
 
 ```js
 const applyRuleActions = (rule, details, obj) => {
@@ -745,9 +839,10 @@ const applyRuleActions = (rule, details, obj) => {
 };
 ```
 
-我认为`background.ts`的一条规则这样描述看上去还算合理：
+对需求进行简单分析后，我认为`background.ts`的一条规则这样描述看上去还算合理，[完整代码](https://github.com/Hans774882968/hans-reres/blob/main/src/action-types.ts)：
 
 ```ts
+// 为节省篇幅，只展示了一部分
 export enum RewriteType {
   SET_UA = 'Set UA',
   REDIRECT = 'Redirect',
@@ -764,7 +859,7 @@ export interface Action {
   type: RewriteType
 }
 
-export interface RedirectAction extends Action{
+export interface RedirectAction extends Action {
   res: string
 }
 
@@ -772,13 +867,57 @@ export interface SetUAAction extends Action {
   newUA: string
 }
 
-export interface AddQueryParamAction extends Action{
+export interface AddQueryParamAction extends Action {
   name: string
   value: string
 }
+
+export interface ModifyQueryParamAction extends Action {
+  name: string
+  value: string
+}
+
+export interface DeleteQueryParamAction extends Action {
+  name: string
+}
+
+export type QueryParamAction = AddQueryParamAction | ModifyQueryParamAction | DeleteQueryParamAction;
+
+export function isAddQueryParamAction (o: Action): o is AddQueryParamAction {
+  return o.type === RewriteType.ADD_QUERY_PARAM;
+}
+
+export type ReqHeaderAction = AddReqHeaderAction | ModifyReqHeaderAction | DeleteReqHeaderAction;
+
+export function isReqHeaderAction (o: Action): o is ReqHeaderAction {
+  return isAddReqHeaderAction(o) ||
+    isModifyReqHeaderAction(o) ||
+    isDeleteReqHeaderAction(o);
+}
 ```
 
-但如果想直接使用`antd`的`Form`组件，`Form.useForm<RequestMappingRule>()`里的`action`属性（是`Action`接口）应该无法直接映射到表单的字段。如何解决呢？我引入了（有更好的做法请佬们教教！）：
+前文提到，`request-interceptor`源码设计描述操作的常量`(add|modify|delete)-response-header`时，借鉴了http状态码的思想，第一个词表示操作类型。但我不打算这么写，而是采用类型安全但比较啰嗦的写法。
+
+`popup`、`options`页面需要用到的，各类型`Action`提供的默认值如下：
+
+```ts
+export const actionDefaultResultValueMap = {
+  [RewriteType.REDIRECT]: { res: 'https://baidu.com' },
+  [RewriteType.SET_UA]: { newUA: 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5' },
+  [RewriteType.BLOCK_REQUEST]: {},
+  [RewriteType.ADD_QUERY_PARAM]: { name: 'role', value: 'acmer' },
+  [RewriteType.MODIFY_QUERY_PARAM]: { name: 'rate', value: '2400' },
+  [RewriteType.DELETE_QUERY_PARAM]: { name: 'param_to_delete' },
+  [RewriteType.ADD_REQ_HEADER]: { name: 'X-Role', value: 'ctfer' },
+  [RewriteType.MODIFY_REQ_HEADER]: { name: 'X-Rate', value: '2400' },
+  [RewriteType.DELETE_REQ_HEADER]: { name: 'Request-Header' },
+  [RewriteType.ADD_RESP_HEADER]: { name: 'Y-Role', value: 'acmer' },
+  [RewriteType.MODIFY_RESP_HEADER]: { name: 'Y-Rate', value: '2400' },
+  [RewriteType.DELETE_RESP_HEADER]: { name: 'Response-Header' }
+};
+```
+
+`RequestMappingRule`的数据结构设计符合直觉，但这个设计对象里有对象，引入了一个问题：如果想直接使用`antd`的`Form`组件，`Form.useForm<RequestMappingRule>()`里的`action`属性（是`Action`接口）应该是无法直接映射到表单的字段。如何解决呢？借鉴**适配器模式**，我引入了以下数据结构（有更好的做法请佬们教教！）：
 
 ```ts
 export interface FlatRequestMappingRule {
@@ -822,7 +961,79 @@ export function transformIntoFlatRequestMappingRule (o: RequestMappingRule): Fla
 }
 ```
 
-## 正式实现
+缺点：
+
+1. 对于新增的`Action`类型，不鼓励新增字段名，因为改动会更大，一般都是直接使用已有的`name, value`属性。这恰好和**`request-interceptor`**的源码一致。
+
+## 插件核心功能：正式实现
+
+赏析`ReRes`和`request-interceptor`两个插件的源码，并结合typescript进行数据结构设计后，我们就可以开始实现本插件的核心功能了。[代码传送门](https://github.com/Hans774882968/hans-reres/blob/main/src/background/background.ts)
+
+模仿`ReRes`写一个加载数据结构的函数：
+
+```ts
+function getMapFromLocalStorage (): RequestMappingRule[] {
+  const hansReResMap = window.localStorage.getItem(hansReResMapName);
+  return hansReResMap ? JSON.parse(hansReResMap) : [];
+}
+```
+
+值得注意的是，`ReRes`源码使用了
+
+```js
+window.addEventListener('storage', getLocalStorage, false);
+```
+
+在`popup, options`页面更新`localStorage`后更新数据结构，于是可以直接将`ReResMap`作为全局变量，理论上可以提高性能。但我这边尝试使用这行代码发现并没有及时更新，因此没有使用全局变量，而是在每个`listener`执行时都重新调用`getMapFromLocalStorage`加载。
+
+因为测试是保证`background.ts`可靠性的唯一手段，所以为了**可测性**，我把大部分代码都移动到`src/utils.ts`了。期间遇到了一个typescript中才有的问题：`chrome`在测试环境中不存在，因此在**不mock的情况下**，只有将代码移动到其他文件，才能测试。但有些类型依赖`chrome`变量，如：`import HttpHeader = chrome.webRequest.HttpHeader;`。因为`HttpHeader`字段少，所以可以使用“鸭子类型”的技巧：
+
+```ts
+export interface MockHttpHeader {
+  name: string;
+  value?: string | undefined;
+  binaryValue?: ArrayBuffer | undefined;
+}
+```
+
+之后`HttpHeader`类型的变量都可以用`MockHttpHeader`代替，而两者是兼容的，所以ts不会报类型错误。
+
+`onBeforeRequest`的入口，我模仿了`request-interceptor`的写法，优先级`cancel > redirect > queryParamsModified`。唯一不同点是，`processRequest`是一个纯函数：
+
+```ts
+const onBeforeRequestListener = (details: WebRequestBodyDetails) => {
+  const hansReResMap = getMapFromLocalStorage();
+  const actionDescription = processRequest(details.url, hansReResMap);
+
+  const { redirectUrl = '', cancel, queryParamsModified } = actionDescription;
+  // 约定优先级：cancel > redirect > queryParamsModified
+  if (cancel) {
+    return { cancel: true };
+  }
+  if (redirectUrl) {
+    try {
+      // Unchecked runtime.lastError: redirectUrl 'baidu.com/' is not a valid URL.
+      // 针对Chrome的这种报错，我们只会尝试给出一个友好点的报错提示，不会擅自阻止报错的产生
+      new URL(redirectUrl);
+    } catch (e) {
+      console.error(`Please make sure that redirectURL '${redirectUrl}' is a valid url when using hans-reres. For example, 'baidu.com' is not a valid url.`);
+    }
+    return redirectUrl === details.url ? {} : { redirectUrl };
+  }
+  if (queryParamsModified) {
+    const { urlObject } = actionDescription;
+    urlObject.search = actionDescription.queryParams.toString();
+    return { redirectUrl: urlObject.toString() };
+  }
+  return {};
+};
+
+chrome.webRequest.onBeforeRequest.addListener(
+  onBeforeRequestListener,
+  { urls: ['<all_urls>'] },
+  ['blocking']
+);
+```
 
 TODO
 
@@ -838,3 +1049,4 @@ TODO
 8. 使用commitlint规范commit格式：https://juejin.cn/post/6990307028162281508
 9. https://juejin.cn/post/7139855730105942030
 10. antd5定制主题官方文档：https://ant-design.gitee.io/docs/react/customize-theme-cn
+11. `onBeforeRequest` MDN：https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/onBeforeRequest
