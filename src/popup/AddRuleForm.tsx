@@ -126,7 +126,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
   const reqUrlTooltip = (
     <>
       <Tooltip placement="top" title={$gt(reqUrlIntro)}>
-        <QuestionCircleOutlined className={styles['request-url-tooltip-icon']} />
+        <QuestionCircleOutlined className={styles.requestUrlTooltipIcon} />
       </Tooltip>
       {$gt('If URL match')}
     </>
@@ -134,7 +134,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
   const respUrlTooltip = (
     <>
       <Tooltip placement="top" title={$gt(respUrlIntro)}>
-        <QuestionCircleOutlined className={styles['response-url-tooltip-icon']} />
+        <QuestionCircleOutlined className={styles.responseUrlTooltipIcon} />
       </Tooltip>
       {$gt('Response URL')}
     </>
@@ -186,7 +186,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
           {...redirectTypeLayout}
           label={$gt('Redirect Type')}
         >
-          <span className={styles['redirect-type']}>
+          <span className={styles.redirectType}>
             {getRedirectType(requestRuleResultFieldValue)}
           </span>
           <Tooltip placement="right" title={$gt(redirectTypeIntro)}>
@@ -225,7 +225,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
   };
 
   return (
-    <div style={{ minWidth: props.minWidth }} className={styles['add-rule-form']}>
+    <div style={{ minWidth: props.minWidth }} className={styles.addRuleForm}>
       <Form
         {...formLayout}
         form={addRuleForm}
@@ -262,15 +262,15 @@ const AddRuleForm: React.FC<Props> = (props) => {
         </div>
 
         <Form.Item {...btnLayout}>
-          <Button className={styles['btn']} type="primary" htmlType="submit">
+          <Button className={styles.btn} type="primary" htmlType="submit">
             {$gt('Submit')}
           </Button>
-          <Button className={styles['btn']} htmlType="button" onClick={onReset}>
+          <Button className={styles.btn} htmlType="button" onClick={onReset}>
             {$gt('Reset Form')}
           </Button>
           {
             props.showClearStorageBtn ? (
-              <Button className={styles['btn']} htmlType="button" onClick={clearLocalStorage}>
+              <Button className={styles.btn} htmlType="button" onClick={clearLocalStorage}>
                 {$gt('Clear localStorage')}
               </Button>
             ) : null

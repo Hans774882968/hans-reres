@@ -229,7 +229,7 @@ vscode打开设置，再打开`settings.json`：
 
 若不生效，尝试重启vscode。
 
-## 配置postcss
+## 配置postcss、CSS Modules
 
 `react + vite`项目已经内置postcss，可以从`package-lock.json`中看出：
 
@@ -334,6 +334,10 @@ module.exports = {
 
 1. 当你有这样的结构：`<div style="padding: 20px;"><div class="flex-and-gap"></div><div></div></div>`，那么`.flex-and-gap`会因为使用了**负margin**，导致它右侧的div**错位**。解决方案：在`.flex-and-gap`外面再套一层div，让`.flex-and-gap`的负margin不产生影响。
 2. 打包体积增大。在只使用了3处`flex-gap`的情况下，css大小`3.17kb -> 11.0kb`。
+
+### CSS Modules VSCode中点击查看样式
+
+`react + vite`项目使用`less + CSS Modules`很简单。但使用VSCode时如何在不跳到`less`文件的前提下方便地查看样式？根据[参考链接12](https://juejin.cn/post/7097312790511091719)，安装VSCode CSS Modules插件后，用小驼峰命名`styles.xxContainer`即可点击查看样式。
 
 ## 配置husky + commitlint
 
@@ -1050,3 +1054,4 @@ TODO
 9. https://juejin.cn/post/7139855730105942030
 10. antd5定制主题官方文档：https://ant-design.gitee.io/docs/react/customize-theme-cn
 11. `onBeforeRequest` MDN：https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/onBeforeRequest
+12. https://juejin.cn/post/7097312790511091719

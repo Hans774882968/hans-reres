@@ -55,18 +55,18 @@ const RuleList: React.FC = () => {
   return (
     <>
       <List
-        className={styles['rule-list']}
+        className={styles.ruleList}
         itemLayout="horizontal"
         dataSource={hansReResMap}
         renderItem={(requestRule) => (
           <List.Item className={styles[`${curClassNamePrefix}-rule-list-item`]}>
-            <div className={styles['rule-item-container']} onClick={(e) => {
+            <div className={styles.ruleItemContainer} onClick={(e) => {
               onRuleActivateStatusChange(e, requestRule);
             }}>
               <Checkbox checked={requestRule.checked} />
-              <span className={styles['req']}>{requestRule.req}</span>
+              <span className={styles.req}>{requestRule.req}</span>
             </div>
-            <div className={styles['btns']}>
+            <div className={styles.btns}>
               <Button type="primary" onClick={() => showEditDialog(requestRule)}>{editText}</Button>
               <Button onClick={() => removeRule(requestRule)}>{removeText}</Button>
             </div>

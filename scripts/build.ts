@@ -1,9 +1,15 @@
 import chalk from 'chalk';
+import figlet from 'figlet';
+import pkg from '../package.json' assert { type: 'json' };
 import process from 'process';
 import spawn from 'cross-spawn';
 
 function displayTime (time: number) {
   return (time / 1000).toFixed(2);
+}
+
+function displayBanner () {
+  console.log(chalk.blueBright(figlet.textSync(pkg.name.toUpperCase())));
 }
 
 // use "npm run build -- skip-lints" to skip lints
@@ -14,6 +20,7 @@ function shouldSkipLints () {
 }
 
 function main () {
+  displayBanner();
   const skipLints = shouldSkipLints();
   const startTime = new Date().valueOf();
   // npm run lint会返回失败码，这里直接忽略

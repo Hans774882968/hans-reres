@@ -41,10 +41,10 @@ const PopupApp: React.FC = () => {
   return (
     <ConfigProvider theme={antdCurrentTheme}>
       <ThemeContext.Provider value={{ curClassNamePrefix, preferDarkTheme, setPreferDarkTheme }}>
-        <Layout className={styles['app']}>
+        <Layout className={styles.app}>
           <PopupContext.Provider value={{ bg, hansReResMap, setHansReResMap }}>
             <Navbar />
-            <div className={styles['popup-body-container']}>
+            <div className={styles.popupBodyContainer}>
               <AddRuleForm ruleToEdit={null} showClearStorageBtn={true} />
               <RuleList />
             </div>
