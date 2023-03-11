@@ -1,12 +1,16 @@
 import {
   RequestMappingRule
-} from '../action-types';
+} from '@/action-types';
 import {
-  filterRulesForHeaderListener, getHeadersMap,
-  hansReResMapName, mapToHttpHeaderArray,
+  filterRulesForHeaderListener,
+  getHeadersMap,
+  hansReResMapName,
+  mapToHttpHeaderArray,
+  parsePostBody,
   processHeaders,
-  processRequest, processUserAgent
-} from '../utils';
+  processRequest,
+  processUserAgent
+} from '@/utils';
 import WebRequestBodyDetails = chrome.webRequest.WebRequestBodyDetails;
 
 function getMapFromLocalStorage (): RequestMappingRule[] {
@@ -50,11 +54,20 @@ chrome.webRequest.onHeadersReceived.addListener(
 
 const onBeforeRequestListener = (details: WebRequestBodyDetails) => {
   const hansReResMap = getMapFromLocalStorage();
-  const actionDescription = processRequest(details.url, hansReResMap);
+  const postBodyList = parsePostBody(details.requestBody?.raw);
+  const actionDescription = processRequest(details.url, hansReResMap, postBodyList);
 
-  const { redirectUrl = '', cancel, queryParamsModified } = actionDescription;
+  const {
+    redirectUrl = '',
+    cancel,
+    queryParamsModified,
+    postBodyParamsShouldBlock
+  } = actionDescription;
   // 约定优先级：cancel > redirect > queryParamsModified
   if (cancel) {
+    return { cancel: true };
+  }
+  if (postBodyParamsShouldBlock) {
     return { cancel: true };
   }
   if (redirectUrl) {
@@ -78,5 +91,5 @@ const onBeforeRequestListener = (details: WebRequestBodyDetails) => {
 chrome.webRequest.onBeforeRequest.addListener(
   onBeforeRequestListener,
   { urls: ['<all_urls>'] },
-  ['blocking']
+  ['blocking', 'requestBody']
 );

@@ -2,6 +2,8 @@ import {
   ActionDescription,
   HeadersMap,
   MockHttpHeader,
+  MockUploadData,
+  PostBodyParamAction,
   ProcessHeadersReturn,
   QueryParamAction,
   ReqHeaderAction,
@@ -17,12 +19,16 @@ import {
   isModifyQueryParamAction,
   isModifyReqHeaderAction,
   isModifyRespHeaderAction,
+  isPostBodyParamAction,
   isQueryParamAction,
   isRedirectAction,
   isReqHeaderAction,
   isRespHeaderAction,
-  isSetUAAction
+  isSetUAAction,
+  plainObject
 } from './action-types';
+import { isPlainObject } from 'lodash';
+import isValidJson from './is-valid-json';
 import xhr from './xhr';
 
 export const hansReResMapName = 'hansReResMap';
@@ -75,6 +81,28 @@ export function modifyQueryParams (queryParams: URLSearchParams, action: QueryPa
   }
 }
 
+export function parsePostBody (rawData: MockUploadData[] | undefined): plainObject[] {
+  if (!rawData) return [];
+  return rawData.filter((item) => {
+    let strData = '';
+    try {
+      strData = new TextDecoder().decode(item.bytes);
+    } catch (e) {
+      return false;
+    }
+    if (!isValidJson(strData)) return false;
+    const obj = JSON.parse(strData);
+    if (!isPlainObject(obj)) return false;
+    return true;
+  }).map((item) => JSON.parse(new TextDecoder().decode(item.bytes)));
+}
+
+export function shouldPostBodyParamsBlock (postBodyList: plainObject[], action: PostBodyParamAction) {
+  return postBodyList.reduce((res, postBody) => {
+    return res || Object.hasOwnProperty.call(postBody, action.name);
+  }, false);
+}
+
 // 约定： requestRules 是 filterRulesForHeaderListener 筛过的
 export function processHeaders (
   requestRules: RequestMappingRule[],
@@ -118,9 +146,10 @@ export function processUserAgent (
   return returnObject;
 }
 
-export function processRequest (url: string, hansReResMap: RequestMappingRule[]): ActionDescription {
+export function processRequest (url: string, hansReResMap: RequestMappingRule[], postBodyList?: plainObject[]): ActionDescription {
   const urlObject = new URL(url);
   const actionDescription: ActionDescription = {
+    postBodyParamsShouldBlock: false,
     queryParams: new URLSearchParams(urlObject.search),
     urlObject
   };
@@ -138,6 +167,9 @@ export function processRequest (url: string, hansReResMap: RequestMappingRule[])
       const action = requestRule.action;
       if (isBlockRequestAction(action)) {
         actionDescription.cancel = true;
+      }
+      if (isPostBodyParamAction(action)) {
+        actionDescription.postBodyParamsShouldBlock = actionDescription.postBodyParamsShouldBlock || shouldPostBodyParamsBlock(postBodyList || [], action);
       }
       if (isRedirectAction(action)) {
         if (/^file:\/\//.test(action.res)) {

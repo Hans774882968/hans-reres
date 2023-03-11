@@ -88,6 +88,7 @@ module.exports = {
       'text-shadow',
       'resize',
       'transition'
-    ]
+    ],
+    'selector-class-pattern': '^[a-z]([A-Z]|[a-z]|[0-9]|-)+$'
   }
 };

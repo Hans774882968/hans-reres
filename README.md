@@ -8,6 +8,13 @@
 
 修改请求的代码都是在`background.js`中实现的。`background.js`实际上也在一个独立的页面运行。在`chrome://extensions/`点击插件的“背景页”链接即可对`background.js`进行调试。
 
+## 亮点
+1. 赏析了若干源码：`ReRes`、`request-interceptor`、`husky`……
+2. 探讨了jest配置的若干问题。如：使用“鸭子类型”技巧解决模块不可测试的问题、配置路径别名……
+3. 编写构建脚本`scripts/build.ts`使得构建过程更为灵活。
+4. 使用`react + vite`展示了一套完整的Chrome插件开发的解决方案。包括：开发时预览、单元测试、构建。
+5. 对`useLocalStorageState`hook源码进行了少量修改，并增加了配套的单元测试用例，以适应Chrome插件开发的需求。
+
 ## Chrome插件ReRes源码赏析
 
 `popup`页面和`options`页面和`background.js`唯一的联系就是，其他页面需要将数据写入背景页的`localStorage`：
@@ -337,7 +344,13 @@ module.exports = {
 
 ### CSS Modules VSCode中点击查看样式
 
-`react + vite`项目使用`less + CSS Modules`很简单。但使用VSCode时如何在不跳到`less`文件的前提下方便地查看样式？根据[参考链接12](https://juejin.cn/post/7097312790511091719)，安装VSCode CSS Modules插件后，用小驼峰命名`styles.xxContainer`即可点击查看样式。
+`react + vite`项目使用`less + CSS Modules`很简单。但使用VSCode时如何在不跳到`less`文件的前提下方便地查看样式？根据[参考链接12](https://juejin.cn/post/7097312790511091719)，安装VSCode CSS Modules插件后，用小驼峰命名`styles.xxContainer`即可点击查看样式，但类名也要一起更改为小驼峰命名法。
+
+另外，如果配置了`stylelint`，还需要修改`selector-class-pattern`：
+
+```js
+{ 'selector-class-pattern': '^[a-z]([A-Z]|[a-z]|[0-9]|-)+$' }
+```
 
 ## 配置husky + commitlint
 
@@ -551,8 +564,8 @@ export default config;
 
 注意：
 
-1. 即使指定测试环境是`jsdom`，我们发起向本地文件的XHR请求时仍会报跨域错误，所以发起XHR请求的模块必须mock。
-2. 对于`use-local-storage-state`包的测试文件`test/useLocalStorageStateBrowser.test.tsx`（我将`use-local-storage-state`包的代码复制到自己的项目里，进行了更改，以满足自己的需求），必须指定测试环境是`jsdom`。
+1. 即使指定测试环境是`jsdom`，我们发起向本地文件的XHR请求时仍会报跨域错误，所以**发起XHR请求的模块必须mock**。
+2. 对于`use-local-storage-state`包的测试文件`test/useLocalStorageStateBrowser.test.tsx`（我将`use-local-storage-state`包的代码复制到自己的项目里，进行了更改，以满足Chrome插件开发的需求），必须指定测试环境是`jsdom`。
 3. 指定测试环境是`jsdom`时需要`npm install jest-environment-jsdom -D`。
 
 3、配置babel：
@@ -640,6 +653,59 @@ node --loader ts-node/esm ./scripts/build.ts
 ```bash
 npm install chalk cross-spawn @types/cross-spawn ts-node -D
 ```
+
+### ES6 import json：--experimental-json-modules 选项
+
+`vite.config.ts`可以直接`import pkg from './package.json';`但我们用`ts-node`运行的脚本不能。为了解决这个问题，可以尝试：
+
+1. import assertion。`import pkg from '../package.json' assert { type: 'json' };`。但只能运行于高版本的`node`。
+2. `--experimental-json-modules`选项。把构建命令改为：`node --loader ts-node/esm --experimental-json-modules scripts/build.ts`即可。这样低版本`node`也支持了～
+
+## 项目配置路径别名
+
+根据[参考链接15](https://juejin.cn/post/7051507089574723620)，配置路径别名一般分为：**cli支持**、**IDE支持**两部分，逐个击破即可。
+
+### vite配置路径别名
+
+cli支持：`vite.config.ts`配置`resolve.alias`。
+
+```ts
+defineConfig({
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src')
+    }
+  }
+});
+```
+
+IDE支持：`tsconfig.json`配置`compilerOptions.paths`。
+
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+    }
+  }
+}
+```
+
+### jest配置路径别名
+
+cli支持：`jest.config.ts`
+
+```ts
+const config: Config.InitialOptions = {
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1'
+  },
+};
+```
+
+IDE支持：依旧是配置`tsconfig.json`的`compilerOptions.paths`。但有一个问题：VSCode只认`tsconfig.json`，不认自己指定的`tsconfig.test.json`。最后还是让`ts-jest`直接读`tsconfig.json`配置了，~~又不是不能用~~
 
 ## 引入i18n
 
@@ -990,7 +1056,7 @@ window.addEventListener('storage', getLocalStorage, false);
 
 在`popup, options`页面更新`localStorage`后更新数据结构，于是可以直接将`ReResMap`作为全局变量，理论上可以提高性能。但我这边尝试使用这行代码发现并没有及时更新，因此没有使用全局变量，而是在每个`listener`执行时都重新调用`getMapFromLocalStorage`加载。
 
-因为测试是保证`background.ts`可靠性的唯一手段，所以为了**可测性**，我把大部分代码都移动到`src/utils.ts`了。期间遇到了一个typescript中才有的问题：`chrome`在测试环境中不存在，因此在**不mock的情况下**，只有将代码移动到其他文件，才能测试。但有些类型依赖`chrome`变量，如：`import HttpHeader = chrome.webRequest.HttpHeader;`。因为`HttpHeader`字段少，所以可以使用“鸭子类型”的技巧：
+因为测试是保证`background.ts`可靠性的唯一手段，所以为了**可测性**，我把大部分代码都移动到`src/utils.ts`了。期间遇到了一个typescript中才有的问题：`chrome`在测试环境中不存在，因此在**不mock的情况下**，只有将代码移动到其他文件，才能测试。但有些类型依赖`chrome`变量，如：`import HttpHeader = chrome.webRequest.HttpHeader;`。因为`HttpHeader`字段少，所以可以使用“**鸭子类型**”的技巧：
 
 ```ts
 export interface MockHttpHeader {
@@ -1041,6 +1107,110 @@ chrome.webRequest.onBeforeRequest.addListener(
 
 TODO
 
+### 读取POST请求体内容
+
+遗憾的是，根据[参考链接14](https://bugs.chromium.org/p/chromium/issues/detail?id=91191)，Chrome永远不会支持**POST请求体的修改**。但我们依旧可以读取请求体，所以仍然可以定这么一个需求：若请求体的JSON某字段包含特定的`name`，则拦截请求。
+
+查看MDN可知，请求体类型定义如下：
+
+```ts
+export interface UploadData {
+    /** Optional. An ArrayBuffer with a copy of the data. */
+    bytes?: ArrayBuffer | undefined;
+    /** Optional. A string with the file's path and name. */
+    file?: string | undefined;
+}
+
+export interface WebRequestBody {
+    /** Optional. Errors when obtaining request body data. */
+    error?: string | undefined;
+    /**
+     * Optional.
+     * If the request method is POST and the body is a sequence of key-value pairs encoded in UTF8, encoded as either multipart/form-data, or application/x-www-form-urlencoded, this dictionary is present and for each key contains the list of all values for that key. If the data is of another media type, or if it is malformed, the dictionary is not present. An example value of this dictionary is {'key': ['value1', 'value2']}.
+     */
+    formData?: { [key: string]: string[] } | undefined;
+    /**
+     * Optional.
+     * If the request method is PUT or POST, and the body is not already parsed in formData, then the unparsed request body elements are contained in this array.
+     */
+    raw?: UploadData[] | undefined;
+}
+```
+
+这给我们读取请求体的JSON制造了不少困难。我们有必要写一个方法，负责从`ArrayBuffer`中读取到请求体的JSON对象。实现如下：
+
+```ts
+// 调用
+const postBodyList = parsePostBody(details.requestBody?.raw);
+
+export function parsePostBody (rawData: MockUploadData[] | undefined): plainObject[] {
+  if (!rawData) return [];
+  return rawData.filter((item) => {
+    let strData = '';
+    try {
+      strData = new TextDecoder().decode(item.bytes);
+    } catch (e) {
+      return false;
+    }
+    if (!isValidJson(strData)) return false;
+    const obj = JSON.parse(strData);
+    if (!isPlainObject(obj)) return false;
+    return true;
+  }).map((item) => JSON.parse(new TextDecoder().decode(item.bytes)));
+}
+```
+
+这里为了避免引入`chrome`导致无法测试，再次使用了“鸭子类型”的技巧：
+
+```ts
+export type plainObject = Record<string, unknown>;
+
+export interface MockUploadData {
+  bytes?: ArrayBuffer | undefined;
+  file?: string | undefined;
+}
+```
+
+有读取JSON对象的能力后，其他部分的实现都很简单，看相关文件即可：[background.ts](https://github.com/Hans774882968/hans-reres/blob/main/src/background/background.ts)、[utils.ts](https://github.com/Hans774882968/hans-reres/blob/main/src/utils.ts)。
+
+另外，为了读取请求体数据，需要添加`requestBody`权限：
+
+```ts
+chrome.webRequest.onBeforeRequest.addListener(
+  onBeforeRequestListener,
+  { urls: ['<all_urls>'] },
+  ['blocking', 'requestBody']
+);
+```
+
+TODO：`background.ts`目前不支持`lodash`按需导入。
+
+### jest如何测试使用了TextEncoder和TextDecoder的模块？
+
+上面用到了`TextEncoder`和`TextDecoder`，所以jest运行会报错。目前我使用的是一个workaround（[参考链接16](https://github.com/inrupt/solid-client-authn-js/issues/1676)）：
+
+（1）`jest.config.ts`
+
+```ts
+const config: Config.InitialOptions = {
+  setupFilesAfterEnv: ['<rootDir>/test/setupTests.ts'],
+  // npm install jest-environment-jsdom -D
+  testEnvironment: 'jsdom'
+}
+```
+
+（2）`test/setupTests.ts`
+
+```ts
+// npm i @testing-library/jest-dom -D
+import '@testing-library/jest-dom';
+import { TextDecoder, TextEncoder } from 'util';
+
+global.TextEncoder = TextEncoder;
+// 不转为any会报类型不匹配的错误
+global.TextDecoder = TextDecoder as any;
+```
+
 ## 参考资料
 
 1. https://juejin.cn/post/7185920750765735973
@@ -1055,3 +1225,7 @@ TODO
 10. antd5定制主题官方文档：https://ant-design.gitee.io/docs/react/customize-theme-cn
 11. `onBeforeRequest` MDN：https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/onBeforeRequest
 12. https://juejin.cn/post/7097312790511091719
+13. `jest jsdom`环境`TextEncoder`和`TextDecoder`未定义：https://stackoverflow.com/questions/68468203/why-am-i-getting-textencoder-is-not-defined-in-jest
+14. https://bugs.chromium.org/p/chromium/issues/detail?id=91191
+15. vite配置路径别名：https://juejin.cn/post/7051507089574723620
+16. jest如何测试使用了`TextEncoder`和`TextDecoder`的模块：https://github.com/inrupt/solid-client-authn-js/issues/1676

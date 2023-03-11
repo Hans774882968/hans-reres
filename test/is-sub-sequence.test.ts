@@ -1,4 +1,4 @@
-import { isSubSequence } from '../src/utils';
+import { isSubSequence } from '@/utils';
 
 describe('is-sub-sequence', () => {
   it('longStr longer than shortStr', () => {

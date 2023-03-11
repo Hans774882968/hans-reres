@@ -4,17 +4,17 @@ import {
   RewriteType,
   actionDefaultResultValueMap,
   transformIntoRequestMappingRule
-} from '../action-types';
+} from '@/action-types';
 import { PopupContext } from './PopupApp';
 import {
   getRedirectType,
   isSubSequence
-} from '../utils';
+} from '@/utils';
 import Button from 'antd/es/button';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
 import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined';
-import React, { useContext } from 'react';
+import React, { ReactNode, useContext } from 'react';
 import Select from 'antd/es/select';
 import Tooltip from 'antd/es/tooltip';
 import message from 'antd/es/message';
@@ -43,6 +43,7 @@ const btnLayout = {
 const redirectTypeIntro = 'Automatically detect the protocol of your response url, such as: http, file.';
 const reqUrlIntro = 'Request URL to match. It should be a regex.';
 const respUrlIntro = 'Response URL. It can start with \'file://\' to represent a local file.';
+const postBodyParamIntro = 'Block request if the request is POST request and post body is JSON string and post body param name list contains specific name. Note that I will only check the outermost keys.';
 
 function getActionOptions () {
   return Object.values(RewriteType).map(action => ({ label: action, value: action }));
@@ -126,7 +127,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
   const reqUrlTooltip = (
     <>
       <Tooltip placement="top" title={$gt(reqUrlIntro)}>
-        <QuestionCircleOutlined className={styles.requestUrlTooltipIcon} />
+        <QuestionCircleOutlined className={styles.formTooltipIcon} />
       </Tooltip>
       {$gt('If URL match')}
     </>
@@ -134,15 +135,28 @@ const AddRuleForm: React.FC<Props> = (props) => {
   const respUrlTooltip = (
     <>
       <Tooltip placement="top" title={$gt(respUrlIntro)}>
-        <QuestionCircleOutlined className={styles.responseUrlTooltipIcon} />
+        <QuestionCircleOutlined className={styles.formTooltipIcon} />
       </Tooltip>
       {$gt('Response URL')}
     </>
   );
-  function getNameValueFormFields (nameFieldPlaceholder: string, valueFieldPlaceholder: string) {
+  const postBodyParamTooltip = (
+    <>
+      <Tooltip placement="top" title={$gt(postBodyParamIntro)}>
+        <QuestionCircleOutlined className={styles.formTooltipIcon} />
+      </Tooltip>
+      {$gt('Name')}
+    </>
+  );
+  function getNameValueFormFields (
+    nameFieldPlaceholder: string,
+    valueFieldPlaceholder: string,
+    nameFieldLabel?: ReactNode,
+    valueFieldLabel?: ReactNode
+  ) {
     return (
       <>
-        <Form.Item label={$gt('Name')} name="name" rules={rules.name}>
+        <Form.Item label={nameFieldLabel || $gt('Name')} name="name" rules={rules.name}>
           <Input
             allowClear
             type="text"
@@ -150,7 +164,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
           />
         </Form.Item>
 
-        <Form.Item label={$gt('Value')} name="value" rules={rules.value}>
+        <Form.Item label={valueFieldLabel || $gt('Value')} name="value" rules={rules.value}>
           <Input
             allowClear
             type="text"
@@ -160,9 +174,12 @@ const AddRuleForm: React.FC<Props> = (props) => {
       </>
     );
   }
-  function getNameFormField (nameFieldPlaceholder: string) {
+  function getNameFormField (
+    nameFieldPlaceholder: string,
+    valueFieldLabel?: ReactNode
+  ) {
     return (
-      <Form.Item label={$gt('Name')} name="name" rules={rules.name}>
+      <Form.Item label={valueFieldLabel || $gt('Name')} name="name" rules={rules.name}>
         <Input
           allowClear
           type="text"
@@ -201,6 +218,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
       </Form.Item>
     ),
     [RewriteType.BLOCK_REQUEST]: null,
+    [RewriteType.BLOCK_IF_POST_BODY_PARAM_CONTAINS_NAME]: getNameFormField($gt('Input param name'), postBodyParamTooltip),
     [RewriteType.ADD_QUERY_PARAM]: getNameValueFormFields(
       $gt('Input param name'), $gt('Input param value')
     ),

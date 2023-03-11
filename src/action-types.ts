@@ -2,6 +2,7 @@ export enum RewriteType {
   SET_UA = 'Set UA',
   REDIRECT = 'Redirect',
   BLOCK_REQUEST = 'Block Request',
+  BLOCK_IF_POST_BODY_PARAM_CONTAINS_NAME = 'Block If Post Body Param Contains Name',
   ADD_QUERY_PARAM = 'Add Query Param',
   MODIFY_QUERY_PARAM = 'Modify Query Param',
   DELETE_QUERY_PARAM = 'Delete Query Param',
@@ -41,7 +42,11 @@ export interface SetUAAction extends Action {
   newUA: string
 }
 
-export type BlockRequestAction = Action
+export type BlockRequestAction = Action;
+
+export interface PostBodyParamAction extends Action {
+  name: string
+}
 
 export interface AddQueryParamAction extends Action {
   name: string
@@ -103,6 +108,10 @@ export function isBlockRequestAction (o: Action): o is BlockRequestAction {
   return o.type === RewriteType.BLOCK_REQUEST;
 }
 
+export function isPostBodyParamAction (o: Action): o is PostBodyParamAction {
+  return o.type === RewriteType.BLOCK_IF_POST_BODY_PARAM_CONTAINS_NAME;
+}
+
 export function isAddQueryParamAction (o: Action): o is AddQueryParamAction {
   return o.type === RewriteType.ADD_QUERY_PARAM;
 }
@@ -161,6 +170,7 @@ export const actionDefaultResultValueMap = {
   [RewriteType.REDIRECT]: { res: 'https://baidu.com' },
   [RewriteType.SET_UA]: { newUA: 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5' },
   [RewriteType.BLOCK_REQUEST]: {},
+  [RewriteType.BLOCK_IF_POST_BODY_PARAM_CONTAINS_NAME]: { name: 'param_to_detect' },
   [RewriteType.ADD_QUERY_PARAM]: { name: 'role', value: 'acmer' },
   [RewriteType.MODIFY_QUERY_PARAM]: { name: 'rate', value: '2400' },
   [RewriteType.DELETE_QUERY_PARAM]: { name: 'param_to_delete' },
@@ -198,12 +208,15 @@ export function transformIntoFlatRequestMappingRule (o: RequestMappingRule): Fla
   return { ...ret, ...o.action };
 }
 
+export type plainObject = Record<string, unknown>;
+
 export interface ActionDescription {
   cancel?: boolean
   redirectUrl?: string
   queryParamsModified?: boolean
   urlObject: URL
   queryParams: URLSearchParams
+  postBodyParamsShouldBlock?: boolean
 }
 
 export type HeadersMap = Map<string, string>;
@@ -218,4 +231,9 @@ export interface MockHttpHeader {
   name: string;
   value?: string | undefined;
   binaryValue?: ArrayBuffer | undefined;
+}
+
+export interface MockUploadData {
+  bytes?: ArrayBuffer | undefined;
+  file?: string | undefined;
 }

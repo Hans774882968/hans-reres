@@ -4,7 +4,7 @@ import React, { useContext } from 'react';
 import Row from 'antd/es/row';
 import Select from 'antd/es/select';
 import Switch from 'antd/es/switch';
-import i18n, { $gt, langOptions } from '../i18n/i18n-init';
+import i18n, { $gt, langOptions } from '@/i18n/i18n-init';
 import icon48 from '../assets/icon48.png';
 import styles from './Navbar.module.less';
 

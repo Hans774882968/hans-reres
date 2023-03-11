@@ -20,5 +20,10 @@ export default defineConfig({
         entryFileNames: '[name].js'
       }
     }
+  },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src')
+    }
   }
 });

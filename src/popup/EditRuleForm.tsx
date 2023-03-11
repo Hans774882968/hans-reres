@@ -1,10 +1,10 @@
-import { $gt } from '../i18n/i18n-init';
+import { $gt } from '@/i18n/i18n-init';
 import {
   FlatRequestMappingRule,
   RequestMappingRule,
   transformIntoFlatRequestMappingRule,
   transformIntoRequestMappingRule
-} from '../action-types';
+} from '@/action-types';
 import { PopupContext } from './PopupApp';
 import AddRuleForm from './AddRuleForm';
 import Modal from 'antd/es/modal';

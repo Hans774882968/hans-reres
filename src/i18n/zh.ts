@@ -1,6 +1,7 @@
 export default {
   Action: '操作',
   'Automatically detect the protocol of your response url, such as: http, file.': '自动检测你输入的响应url的协议，比如：http、file',
+  ['Block request if the request is POST request and post body is JSON string and post body param name list contains specific name. Note that I will only check the outermost keys.']: '如果请求为POST请求，请求体是合法的JSON字符串，并且请求体的key列表包含指定字符串，则拦截该请求。注意，为了实现简单，我只检测JSON对象最外层的key。',
   'Clear localStorage': '清空localStorage',
   'Clear success': '清除成功',
   Edit: '编辑',

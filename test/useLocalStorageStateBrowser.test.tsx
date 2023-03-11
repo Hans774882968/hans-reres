@@ -2,7 +2,7 @@
 import { act, render, renderHook } from '@testing-library/react';
 import React, { useEffect, useLayoutEffect, useMemo } from 'react';
 import superjson from 'superjson';
-import useLocalStorageState, { inMemoryData } from '../src/hooks/useLocalStorageState';
+import useLocalStorageState, { inMemoryData } from '@/hooks/useLocalStorageState';
 import util from 'util';
 // Unfortunately, we can not import lodash on demand
 import * as lodash from 'lodash';

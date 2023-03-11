@@ -1,15 +1,17 @@
-import { RewriteType } from '../src/action-types';
+import { RewriteType } from '@/action-types';
 import {
   filterRulesForHeaderListener,
-  getHeadersMap, mapToHttpHeaderArray,
+  getHeadersMap,
+  mapToHttpHeaderArray,
+  parsePostBody,
   processHeaders,
   processRequest,
   processUserAgent
-} from '../src/utils';
+} from '@/utils';
 import expect from 'expect';
 // TODO：搞清楚为什么不能 import shuffle from 'lodash/shuffle';
-import { orderBy, shuffle } from 'lodash';
-import xhr from '../src/xhr';
+import { orderBy, sample, shuffle } from 'lodash';
+import xhr from '@/xhr';
 
 jest.mock('../src/xhr', () => {
   return {
@@ -76,7 +78,7 @@ describe('processRequest()', () => {
         res: 'https://www.baidu.com/question/305638940/answer/670034343'
       }
     ];
-    tests.forEach(test => {
+    tests.forEach((test) => {
       const { redirectUrl: url } = processRequest(test.req, hansReResMap);
       expect(url).toBe(test.res);
     });
@@ -308,6 +310,166 @@ describe('processRequest()', () => {
       expect(cancel).toBeTruthy();
       expect(queryParamsModified).toBeTruthy();
       expect(queryParams.toString()).toBe('rate=2400');
+    }
+  });
+});
+
+function object2ArrayBuffer (o: unknown) {
+  return new TextEncoder().encode(JSON.stringify(o)).buffer;
+}
+
+describe('Post Body params modification', () => {
+  it('parsePostBody()', () => {
+    const tests = [
+      { a: [], q: undefined },
+      { a: [], q: [] },
+      {
+        a: [{ age: 18, name: 'hans' }],
+        q: [{}, { bytes: object2ArrayBuffer({ age: 18, name: 'hans' }) }]
+      },
+      {
+        a: [
+          {},
+          { role: 'acmer' },
+          { rate: 2500, role: 'acmer' }
+        ],
+        q: [
+          {},
+          { bytes: object2ArrayBuffer(1234) },
+          { bytes: object2ArrayBuffer('1234') },
+          { bytes: object2ArrayBuffer({}) },
+          { bytes: object2ArrayBuffer([]) },
+          { bytes: object2ArrayBuffer([1, 2, 3]) },
+          { bytes: object2ArrayBuffer({ role: 'acmer' }) },
+          { bytes: object2ArrayBuffer({ rate: 2500, role: 'acmer' }) }
+        ]
+      },
+      // nested object
+      {
+        a: [
+          { girlFriend: { isExist: false, name: 'amy' }, name: 'sam' }
+        ],
+        q: [
+          { bytes: object2ArrayBuffer({ girlFriend: { isExist: false, name: 'amy' }, name: 'sam' }) }
+        ]
+      }
+    ];
+    tests.forEach((test) => {
+      expect(parsePostBody(test.q)).toStrictEqual(test.a);
+    });
+  });
+
+  it('post body param rule: nested JSON object', () => {
+    const hansReResMap = [
+      {
+        action: {
+          name: 'girlFriend',
+          type: RewriteType.BLOCK_IF_POST_BODY_PARAM_CONTAINS_NAME
+        },
+        checked: true,
+        req: 'https://www.jianshu.com/shakespeare/notes/(.*)/mark_viewed'
+      }
+    ];
+    const inputPostBodyList = parsePostBody([
+      { bytes: object2ArrayBuffer({ girlFriend: { isExist: false, name: 'amy' }}) }
+    ]);
+    const { postBodyParamsShouldBlock } = processRequest('https://www.jianshu.com/shakespeare/notes/(.*)/mark_viewed?rate=2500', hansReResMap, inputPostBodyList);
+    expect(postBodyParamsShouldBlock).toBeTruthy();
+  });
+
+  it('post body param rule: nested JSON object. I will only check the outermost keys.', () => {
+    const hansReResMap = [
+      {
+        action: {
+          name: sample(['isExist', 'name']),
+          type: RewriteType.BLOCK_IF_POST_BODY_PARAM_CONTAINS_NAME
+        },
+        checked: true,
+        req: '.*idu\\.com'
+      }
+    ];
+    const inputPostBodyList = parsePostBody([
+      { bytes: object2ArrayBuffer({ girlFriend: { isExist: false, name: 'amy' }}) }
+    ]);
+    const { postBodyParamsShouldBlock } = processRequest('https://baidu.com/?rate=2500', hansReResMap, inputPostBodyList);
+    expect(postBodyParamsShouldBlock).toBeFalsy();
+  });
+
+  it('query param rule and post body param rule', () => {
+    const inputPostBodyList = parsePostBody([
+      { bytes: object2ArrayBuffer(1234) },
+      { bytes: object2ArrayBuffer('1234') },
+      { bytes: object2ArrayBuffer({}) },
+      { bytes: object2ArrayBuffer({ name: 'sam' }) },
+      { bytes: object2ArrayBuffer({ age: 18 }) },
+      { bytes: object2ArrayBuffer({ hobby: 'math', isStudent: true }) }
+    ]);
+    for (let i = 0; i < 10; ++i) {
+      const hansReResMap = [
+        {
+          action: {
+            name: 'rate',
+            type: RewriteType.MODIFY_QUERY_PARAM,
+            value: '2400'
+          },
+          checked: true,
+          req: '.*idu\\.com'
+        },
+        {
+          action: {
+            name: sample(['name', 'age', 'hobby', 'isStudent']),
+            type: RewriteType.BLOCK_IF_POST_BODY_PARAM_CONTAINS_NAME
+          },
+          checked: true,
+          req: '.*idu\\.com'
+        },
+        {
+          action: { type: RewriteType.BLOCK_REQUEST },
+          checked: true,
+          req: '.*idu\\.com'
+        }
+      ];
+      const tempMap = shuffle(hansReResMap);
+      const {
+        cancel,
+        postBodyParamsShouldBlock,
+        queryParamsModified,
+        queryParams
+      } = processRequest('https://baidu.com/?rate=2500', tempMap, inputPostBodyList);
+      expect(cancel).toBeTruthy();
+      expect(postBodyParamsShouldBlock).toBeTruthy();
+      expect(queryParamsModified).toBeTruthy();
+      expect(queryParams.toString()).toBe('rate=2400');
+    }
+  });
+
+  it('cancel rule and post body param rule', () => {
+    const inputPostBodyList = parsePostBody([
+      { bytes: object2ArrayBuffer(1234) },
+      { bytes: object2ArrayBuffer('1234') },
+      { bytes: object2ArrayBuffer({ role: 'acmer' }) },
+      { bytes: object2ArrayBuffer({ rate: 2500, role: 'acmer' }) }
+    ]);
+    for (let i = 0; i < 4; ++i) {
+      const hansReResMap = [
+        {
+          action: {
+            name: sample(['rate', 'role']),
+            type: RewriteType.BLOCK_IF_POST_BODY_PARAM_CONTAINS_NAME
+          },
+          checked: true,
+          req: 'https://www.jianshu.com/shakespeare/notes/(.*)/mark_viewed'
+        },
+        {
+          action: { type: RewriteType.BLOCK_REQUEST },
+          checked: true,
+          req: 'https://www.jianshu.com/shakespeare/notes/(.*)/mark_viewed'
+        }
+      ];
+      const tempMap = shuffle(hansReResMap);
+      const { cancel, postBodyParamsShouldBlock } = processRequest('https://www.jianshu.com/shakespeare/notes/610c4e850250/mark_viewed', tempMap, inputPostBodyList);
+      expect(cancel).toBeTruthy();
+      expect(postBodyParamsShouldBlock).toBeTruthy();
     }
   });
 });

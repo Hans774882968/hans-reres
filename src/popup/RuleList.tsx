@@ -1,4 +1,4 @@
-import { $gt } from '../i18n/i18n-init';
+import { $gt } from '@/i18n/i18n-init';
 import { PopupContext, ThemeContext } from './PopupApp';
 import { RequestMappingRule, RewriteType, actionDefaultResultValueMap } from '../action-types';
 import Button from 'antd/es/button';

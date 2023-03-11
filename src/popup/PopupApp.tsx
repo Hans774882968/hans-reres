@@ -8,7 +8,7 @@ import React, { createContext } from 'react';
 import RuleList from './RuleList';
 import styles from './PopupApp.module.less';
 import theme from 'antd/es/theme';
-import useLocalStorageState from '../hooks/useLocalStorageState';
+import useLocalStorageState from '@/hooks/useLocalStorageState';
 
 const bg = chrome?.extension?.getBackgroundPage();
 const bgWindow = bg || window;

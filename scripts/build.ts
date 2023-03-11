@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import figlet from 'figlet';
-import pkg from '../package.json' assert { type: 'json' };
+import pkg from '../package.json';
 import process from 'process';
 import spawn from 'cross-spawn';
 
