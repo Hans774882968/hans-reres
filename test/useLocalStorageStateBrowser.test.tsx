@@ -5,7 +5,7 @@ import superjson from 'superjson';
 import useLocalStorageState, { inMemoryData } from '@/hooks/useLocalStorageState';
 import util from 'util';
 // Unfortunately, we can not import lodash on demand
-import * as lodash from 'lodash';
+import { cloneDeep } from 'lodash-es';
 
 beforeEach(() => {
   // Throw an error when `console.error()` is called. This is especially useful in a React tests
@@ -753,7 +753,7 @@ describe('useLocalStorageState()', () => {
     };
 
     test('wnd.localStorage !== localStorage, defaultValue is not provided', () => {
-      const wnd = lodash.cloneDeep(window);
+      const wnd = cloneDeep(window);
       wnd.localStorage = mockLocalStorage;
       wnd.localStorage.setItem('color', 'skyblue');
       expect(wnd.localStorage.getItem('color')).toBe('skyblue');
@@ -773,7 +773,7 @@ describe('useLocalStorageState()', () => {
     });
 
     test('wnd.localStorage !== localStorage, defaultValue is provided', () => {
-      const wnd = lodash.cloneDeep(window);
+      const wnd = cloneDeep(window);
       wnd.localStorage = mockLocalStorage;
       expect(wnd.localStorage.getItem('colors')).toBe(null);
       expect(localStorage.getItem('colors')).toBe(null);

@@ -19,6 +19,7 @@ export default {
   'Input response header key': '输入响应头的键',
   'Input response header value': '输入响应头的值',
   'Input response url': '输入响应url',
+  'Keep Query Params': '保留URL的查询字符串',
   Name: '键',
   'New User Agent': 'User Agent修改为',
   'New User Agent should not be empty': '新的User Agent不应为空',

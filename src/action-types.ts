@@ -25,6 +25,7 @@ export interface FlatRequestMappingRule {
   checked: boolean
   action: RewriteType
   res: string
+  keepQueryParams: boolean
   newUA: string
   name: string
   value: string
@@ -36,6 +37,7 @@ export interface Action {
 
 export interface RedirectAction extends Action {
   res: string
+  keepQueryParams: boolean
 }
 
 export interface SetUAAction extends Action {
@@ -166,8 +168,16 @@ export function isRespHeaderAction (o: Action): o is RespHeaderAction {
     isDeleteRespHeaderAction(o);
 }
 
+export function newRedirectAction (res: string, keepQueryParams = false) {
+  return { keepQueryParams, res, type: RewriteType.REDIRECT };
+}
+
+export function newSetUAAction (newUA: string) {
+  return { newUA, type: RewriteType.SET_UA };
+}
+
 export const actionDefaultResultValueMap = {
-  [RewriteType.REDIRECT]: { res: 'https://baidu.com' },
+  [RewriteType.REDIRECT]: { keepQueryParams: false, res: 'https://baidu.com' },
   [RewriteType.SET_UA]: { newUA: 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5' },
   [RewriteType.BLOCK_REQUEST]: {},
   [RewriteType.BLOCK_IF_POST_BODY_PARAM_CONTAINS_NAME]: { name: 'param_to_detect' },
@@ -182,10 +192,21 @@ export const actionDefaultResultValueMap = {
   [RewriteType.DELETE_RESP_HEADER]: { name: 'Response-Header' }
 };
 
+export const flatRuleInitialValue = {
+  action: RewriteType.REDIRECT,
+  checked: true,
+  keepQueryParams: false,
+  name: '',
+  newUA: '',
+  req: '.*hub\\.com',
+  res: actionDefaultResultValueMap[RewriteType.REDIRECT].res,
+  value: ''
+};
+
 export function transformIntoRequestMappingRule (o: FlatRequestMappingRule): RequestMappingRule {
   const action: Action = (() => {
-    if (o.action === RewriteType.REDIRECT) return { res: o.res, type: o.action };
-    if (o.action === RewriteType.SET_UA) return { newUA: o.newUA, type: o.action };
+    if (o.action === RewriteType.REDIRECT) return newRedirectAction(o.res, o.keepQueryParams);
+    if (o.action === RewriteType.SET_UA) return newSetUAAction(o.newUA);
     return { name: o.name, type: o.action, value: o.value };
   })();
   return {
@@ -199,6 +220,7 @@ export function transformIntoFlatRequestMappingRule (o: RequestMappingRule): Fla
   const ret: FlatRequestMappingRule = {
     action: o.action.type,
     checked: o.checked,
+    keepQueryParams: false,
     name: '',
     newUA: '',
     req: o.req,

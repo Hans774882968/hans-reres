@@ -74,13 +74,13 @@ const RuleList: React.FC = () => {
         )}
       />
       {
-        isDialogVisible ? (
+        isDialogVisible && (
           <EditRuleForm
             visible={isDialogVisible}
             requestRule={requestRuleToEdit}
             setDialogVisible={(visible: boolean) => setDialogVisible(visible)}
           />
-        ) : null
+        )
       }
     </>
   );

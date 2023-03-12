@@ -19,6 +19,7 @@ export default {
   'Input response header key': 'Input response header key',
   'Input response header value': 'Input response header value',
   'Input response url': 'Input response url',
+  'Keep Query Params': 'Keep Query Params',
   Name: 'Name',
   'New User Agent': 'New User Agent',
   'New User Agent should not be empty': 'New User Agent should not be empty',

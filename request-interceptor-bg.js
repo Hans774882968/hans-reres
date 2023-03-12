@@ -38,6 +38,7 @@ const isExtensionEnabled = () => dataSet?.uiSettings?.isExtensionEnabled;
 
 const isRuleGroupEnabled = rg => rg && rg.enabled;
 
+// 这个转化可以降低修改操作的时间复杂度
 // HttpHeader[]转Map
 const getHeadersMap = headers => {
   if (!headers) {
@@ -92,7 +93,7 @@ const patternMatchingReplace = (str, matchObj) => {
 };
 
 // ruleGroup和rule共用。因为我们注意到ruleGroup的Filter Condition可选项是rule的When Request's的子集
-// param用于 shouldRuleGroupBeApplied 为标签页url，用于 shouldRuleBeApplied 为请求的url（details.url）
+// param 用于 shouldRuleGroupBeApplied 时为标签页url，用于 shouldRuleBeApplied 时为请求的url（details.url）
 const isConditionMatched = (param, condition, value) => {
   if (!param || !condition || !value) {
     return true;

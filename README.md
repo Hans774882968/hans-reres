@@ -29,7 +29,7 @@
     }
 ```
 
-`background.js`注释版源码：
+`background.js`注释版源码如下：
 
 ```js
 var ReResMap = [];
@@ -103,13 +103,13 @@ window.addEventListener('storage', getLocalStorage, false);
 
 ## Chrome插件request-interceptor background.js源码赏析
 
-**`request-interceptor`**作者说没有开源，但我们仍然能轻易找到其`background.js`地址。~~幸好没有特意进行混淆~~
+`request-interceptor`作者说没有开源，但我们仍然能轻易找到其`background.js`地址。~~幸好没有特意进行混淆~~
 
 1. 安装插件。
 2. 以macOS为例，执行命令：`open ~/Library/Application\ Support/Google/Chrome/Default/Extensions`，打开Chrome插件安装路径。
 3. 根据插件ID找到对应的文件夹。
 
-如何获得**`request-interceptor`**的`background.js`所使用的数据结构：阅读源码后知道，只需要在`background.js`控制台运行以下代码即可：
+如何获得`request-interceptor`的`background.js`所使用的数据结构：阅读源码后知道，只需要在`background.js`控制台运行以下代码即可：
 
 ```js
 let dataSet1 = {};
@@ -120,7 +120,7 @@ chrome.storage.local.get(storageKey1, config => {
 });
 ```
 
-代码比较长就不完整贴出啦。[带注释版源码地址](https://github.com/Hans774882968/hans-reres/blob/main/request-interceptor-bg.js)
+代码比较长就不完整贴出啦。[带注释版源码地址](https://github.com/Hans774882968/hans-reres/blob/main/request-interceptor-bg.js)，注释中包含对数据结构的讲解～
 
 可以学到什么：
 
@@ -574,10 +574,10 @@ export default config;
 npm install babel-jest @babel/core @babel/preset-env @babel/preset-typescript -D
 ```
 
-4、创建`babel.config.ts`
+4、创建`babel.config.cjs`
 
-```ts
-export default {
+```cjs
+module.exports = {
   presets: [
     ['@babel/preset-env', { targets: { node: 'current' }}],
     '@babel/preset-typescript'
@@ -591,7 +591,54 @@ export default {
 npm install ts-jest ts-node -D
 ```
 
-总的来说，只需要：（1）安装若干`devDependencies`的npm包。（2）创建`babel.config.ts`和`jest.config.ts`。
+总的来说，只需要：（1）安装若干`devDependencies`的npm包。（2）创建`babel.config.cjs`和`jest.config.ts`。
+
+### jest不支持es模块的npm包（如：lodash-es）如何解决？
+
+根据[参考链接17](https://www.cnblogs.com/xueyoucd/p/10495922.html)，这是因为`lodash-es`是一个es module且没有被jest转换。
+
+（1）安装相关依赖：
+
+```bash
+npm install -D babel-jest @babel/core @babel/preset-env babel-plugin-transform-es2015-modules-commonjs
+```
+
+（2）`jest.config.ts`配置：
+
+```ts
+import { Config } from '@jest/types';
+/*
+ * For a detailed explanation regarding each configuration property and type check, visit:
+ * https://jestjs.io/docs/configuration
+ */
+
+const config: Config.InitialOptions = {
+  preset: 'ts-jest', // 这个和以前一样，保持不变
+  // 对于js文件用babel-jest转换，ts、tsx还是用ts-jest转换
+  transform: {
+    '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.js$': 'babel-jest'
+  },
+  // 为了效率，默认是忽略node_modules里的文件的，因此要声明不忽略 lodash-es
+  transformIgnorePatterns: [
+    '<rootDir>/node_modules/(?!lodash-es)'
+  ]
+}
+```
+
+（3）含泪把之前的`babel.config.ts`改为`babel.config.cjs`，配置babel插件`babel-plugin-transform-es2015-modules-commonjs`：
+
+```js
+module.exports = {
+  plugins: ['transform-es2015-modules-commonjs'], // 刚刚安装的
+  presets: [
+    ['@babel/preset-env', { targets: { node: 'current' }}],
+    '@babel/preset-typescript'
+  ]
+};
+```
+
+为什么要改成`.cjs`？相同的内容，只不过后缀名为`.js`不行嘛？亲测不行，报错`You appear to be using a native ECMAScript module configuration file, which is only supported when running Babel asynchronously.`。这是因为vite脚手架创建的项目`package.json`有一句~~万恶的~~声明：`"type": "module"`。
 
 ## 构建流程
 
@@ -839,7 +886,7 @@ const curClassNamePrefix = preferDarkTheme ? ClassNamePrefix.DARK : ClassNamePre
 
 我们希望这个插件支持：
 
-- 重定向到某URL，包括`file://`这种指向本地文件的。
+- 重定向到某URL，包括`file://`这种指向本地文件的（来自`ReRes`）。
 - 对于GET请求，可以进行`URLSearchParams`的增删改。
 - 对请求头进行增删改。
 - 对响应头进行增删改。
@@ -918,7 +965,7 @@ export enum RewriteType {
   REDIRECT = 'Redirect',
   ADD_QUERY_PARAM = 'Add Query Param'
 }
-
+// localStorage中的核心数据结构：{ hansReResMap: RequestMappingRule[] }
 export interface RequestMappingRule {
   req: string
   action: Action
@@ -950,7 +997,7 @@ export interface ModifyQueryParamAction extends Action {
 export interface DeleteQueryParamAction extends Action {
   name: string
 }
-
+// 在此仅展示对 URLSearchParams 的操作
 export type QueryParamAction = AddQueryParamAction | ModifyQueryParamAction | DeleteQueryParamAction;
 
 export function isAddQueryParamAction (o: Action): o is AddQueryParamAction {
@@ -1033,7 +1080,7 @@ export function transformIntoFlatRequestMappingRule (o: RequestMappingRule): Fla
 
 缺点：
 
-1. 对于新增的`Action`类型，不鼓励新增字段名，因为改动会更大，一般都是直接使用已有的`name, value`属性。这恰好和**`request-interceptor`**的源码一致。
+1. 对于新增的`Action`类型，不鼓励新增字段名，因为改动会更大，一般都是直接使用已有的`name, value`属性。这恰好和`request-interceptor`的源码一致。
 
 ## 插件核心功能：正式实现
 
@@ -1054,9 +1101,9 @@ function getMapFromLocalStorage (): RequestMappingRule[] {
 window.addEventListener('storage', getLocalStorage, false);
 ```
 
-在`popup, options`页面更新`localStorage`后更新数据结构，于是可以直接将`ReResMap`作为全局变量，理论上可以提高性能。但我这边尝试使用这行代码发现并没有及时更新，因此没有使用全局变量，而是在每个`listener`执行时都重新调用`getMapFromLocalStorage`加载。
+在`popup, options`页面更新`localStorage`后更新数据结构，于是可以直接将`ReResMap`作为全局变量，理论上可以提高性能。但我这边尝试使用这行代码发现并没有及时更新，因此没有使用全局变量，而是退而求其次，在每个`listener`执行时都重新调用`getMapFromLocalStorage`加载。
 
-因为测试是保证`background.ts`可靠性的唯一手段，所以为了**可测性**，我把大部分代码都移动到`src/utils.ts`了。期间遇到了一个typescript中才有的问题：`chrome`在测试环境中不存在，因此在**不mock的情况下**，只有将代码移动到其他文件，才能测试。但有些类型依赖`chrome`变量，如：`import HttpHeader = chrome.webRequest.HttpHeader;`。因为`HttpHeader`字段少，所以可以使用“**鸭子类型**”的技巧：
+因为测试是保证`background.ts`可靠性的唯一手段，所以为了**可测性**，我把大部分代码都移动到`src/utils.ts`了。期间遇到了一个typescript中才有的问题：`chrome`在测试环境中不存在，因此在**不mock的情况下**，只有将代码移动到其他文件，才能测试。但有些类型依赖`chrome`变量，如：`import HttpHeader = chrome.webRequest.HttpHeader;`。因为`HttpHeader`字段少，所以可以使用“**鸭子类型**”的技巧来解决这个问题：
 
 ```ts
 export interface MockHttpHeader {
@@ -1066,9 +1113,15 @@ export interface MockHttpHeader {
 }
 ```
 
+PS：鸭子类型的介绍，来自《JavaScript设计模式与开发实践》Chap1。
+
+> JavaScript 是动态语言，无需进行类型检测，可以调用对象的任意方法。这一切都建立在鸭子类型上，即：如果它走起路来像鸭子，叫起来像鸭子，那它就是鸭子。
+
+> 鸭子模型指导我们关注**对象的行为**，而不是对象本身，也就是关注 Has-A，而不是 Is-A。利用鸭子模式就可以实现动态类型语言一个原则"面向接口编程而不是面向实现编程"。
+
 之后`HttpHeader`类型的变量都可以用`MockHttpHeader`代替，而两者是兼容的，所以ts不会报类型错误。
 
-`onBeforeRequest`的入口，我模仿了`request-interceptor`的写法，优先级`cancel > redirect > queryParamsModified`。唯一不同点是，`processRequest`是一个纯函数：
+`onBeforeRequest`的入口，我模仿了`request-interceptor`的写法，优先级`cancel > redirect > queryParamsModified`。唯一不同点是，`request-interceptor`为了简化代码，实现为一个对`returnObject`的副作用；而我实现的`processRequest`是一个纯函数：
 
 ```ts
 const onBeforeRequestListener = (details: WebRequestBodyDetails) => {
@@ -1105,7 +1158,72 @@ chrome.webRequest.onBeforeRequest.addListener(
 );
 ```
 
-TODO
+获取到`actionDescription`后，就按照优先级来决定操作。这里引入了一个限制：读取一系列规则后，对一个请求只有一个操作。`request-interceptor`引入这个限制是为了**简化代码**，但这个限制也是合理的。因为用户希望重定向URL时，一般不会希望在重定向后再对新URL的`URLSearchParams`进行增删改。
+
+### 重定向时保持URLSearchParams的功能
+
+考虑一个场景：前端开发过程中，希望把GET请求转发到YAPI，来方便地使用Mock数据。但是在`request-interceptor`中配置重定向规则后，发现会丢失查询字符串。而我在实现重定向规则时，是模仿`ReRes`，对请求URL进行replace，所以看起来可以保留查询字符串。但面对响应URL有查询字符串的情况，新URL的查询字符串会不符合预期。所以我们在此引入一个小功能：对于重定向规则，在`popup, options`页面可以勾选是否需要保持查询字符串。若某条重定向规则指出需要保持，则把新URL的查询字符串覆盖为原始URL（未读取规则前的URL）的查询字符串。
+
+首先给`RedirectAction`加个选项：
+
+```ts
+export interface RedirectAction extends Action {
+  res: string
+  keepQueryParams: boolean
+}
+```
+
+最后只需要在每次循环获取`redirectUrl`后，对其进行一个后置处理。
+
+```ts
+export function overrideQueryParams (urlObject: URL, redirectUrl: string, action: RedirectAction) {
+  if (!action.keepQueryParams) return redirectUrl;
+  try {
+    const redirectUrlObject = new URL(redirectUrl);
+    redirectUrlObject.search = urlObject.search;
+    redirectUrl = redirectUrlObject.toString();
+  } catch (e) {
+    console.error('overrideQueryParams() error', e);
+  }
+  return redirectUrl;
+}
+```
+
+### 请求头、响应头的处理
+
+listener的代码结构和上述`processRequest`类似：（1）一个纯函数。（2）返回值包括：要使用到的数据和一系列是否需要进行某操作的`bool`变量。定义如下：
+
+```ts
+export type HeadersMap = Map<string, string>;
+
+export interface ProcessHeadersReturn {
+  headersModified: boolean
+  requestHeadersMap: HeadersMap
+  responseHeadersMap: HeadersMap
+}
+```
+
+实现难度较低，不再赘述。相关代码传送门：[background.ts](https://github.com/Hans774882968/hans-reres/blob/main/src/background/background.ts)、[utils.ts](https://github.com/Hans774882968/hans-reres/blob/main/src/utils.ts)
+
+`details.requestHeaders`和`details.responseHeaders`的类型是`chrome.webRequest.HttpHeader[] | undefined`，这个数据结构对修改操作不友好。`request-interceptor`为了降低修改操作的时间复杂度，引入了转化为`Map`的前置操作和重新转为数组的后置操作。咱们用TS模仿实现时，需要再次使用“鸭子类型”的技巧，相关代码如下：
+
+```ts
+export interface MockHttpHeader {
+  name: string;
+  value?: string | undefined;
+  binaryValue?: ArrayBuffer | undefined;
+}
+
+export type HeadersMap = Map<string, string>;
+
+export function mapToHttpHeaderArray (mp: HeadersMap): MockHttpHeader[] {
+  return [...mp.entries()].map(([name, value]) => ({ name, value }));
+}
+// getHeadersMap 直接在 listener 中调用
+export function getHeadersMap (headers: MockHttpHeader[]) {
+  return new Map(headers.map(header => [header.name, header.value || '']));
+}
+```
 
 ### 读取POST请求体内容
 
@@ -1171,7 +1289,7 @@ export interface MockUploadData {
 }
 ```
 
-有读取JSON对象的能力后，其他部分的实现都很简单，看相关文件即可：[background.ts](https://github.com/Hans774882968/hans-reres/blob/main/src/background/background.ts)、[utils.ts](https://github.com/Hans774882968/hans-reres/blob/main/src/utils.ts)。
+有读取JSON对象的能力后，其他部分的实现都很简单，看相关代码实现即可：[background.ts](https://github.com/Hans774882968/hans-reres/blob/main/src/background/background.ts)、[utils.ts](https://github.com/Hans774882968/hans-reres/blob/main/src/utils.ts)。
 
 另外，为了读取请求体数据，需要添加`requestBody`权限：
 
@@ -1183,11 +1301,13 @@ chrome.webRequest.onBeforeRequest.addListener(
 );
 ```
 
-TODO：`background.ts`目前不支持`lodash`按需导入。
+### lodash按需导入：tree-shaking
+
+一般我们只使用`lodash`的少数函数，但构建时会将所有模块打包进来。可以按需导入嘛？根据[参考链接18](https://www.cnblogs.com/fancyLee/p/10932050.html)和[参考链接19](https://blog.battlefy.com/tree-shaking-lodash-with-vite)，可以使用`lodash-es`。`vite`项目基本上正常import，比如：`import { isPlainObject } from 'lodash-es';`，就可以获得`tree-shaking`的能力了。我遇到的问题见上文《jest不支持es模块的npm包（如：lodash-es）如何解决？》
 
 ### jest如何测试使用了TextEncoder和TextDecoder的模块？
 
-上面用到了`TextEncoder`和`TextDecoder`，所以jest运行会报错。目前我使用的是一个workaround（[参考链接16](https://github.com/inrupt/solid-client-authn-js/issues/1676)）：
+如果用到了`TextEncoder`和`TextDecoder`，那么jest运行会报错。目前我使用的是一个workaround（[参考链接16](https://github.com/inrupt/solid-client-authn-js/issues/1676)）：
 
 （1）`jest.config.ts`
 
@@ -1211,6 +1331,10 @@ global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder as any;
 ```
 
+### 后记
+
+配置难度（~~一生之敌~~）排名：1、`jest`~~yyds~~。2、`eslint`~~暂时的神~~。
+
 ## 参考资料
 
 1. https://juejin.cn/post/7185920750765735973
@@ -1229,3 +1353,6 @@ global.TextDecoder = TextDecoder as any;
 14. https://bugs.chromium.org/p/chromium/issues/detail?id=91191
 15. vite配置路径别名：https://juejin.cn/post/7051507089574723620
 16. jest如何测试使用了`TextEncoder`和`TextDecoder`的模块：https://github.com/inrupt/solid-client-authn-js/issues/1676
+17. 解决jest处理es模块：https://www.cnblogs.com/xueyoucd/p/10495922.html
+18. lodash按需引入：https://www.cnblogs.com/fancyLee/p/10932050.html
+19. https://blog.battlefy.com/tree-shaking-lodash-with-vite

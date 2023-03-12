@@ -3,6 +3,7 @@ import {
   FlatRequestMappingRule,
   RewriteType,
   actionDefaultResultValueMap,
+  flatRuleInitialValue,
   transformIntoRequestMappingRule
 } from '@/action-types';
 import { PopupContext } from './PopupApp';
@@ -16,6 +17,7 @@ import Input from 'antd/es/input';
 import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined';
 import React, { ReactNode, useContext } from 'react';
 import Select from 'antd/es/select';
+import Switch from 'antd/es/switch';
 import Tooltip from 'antd/es/tooltip';
 import message from 'antd/es/message';
 import styles from './AddRuleForm.module.less';
@@ -52,20 +54,15 @@ function getActionOptions () {
 const AddRuleForm: React.FC<Props> = (props) => {
   const { hansReResMap, setHansReResMap, bg } = useContext(PopupContext)!;
 
-  const initialRule: FlatRequestMappingRule = props.ruleToEdit || {
-    action: RewriteType.REDIRECT,
-    checked: true,
-    name: '',
-    newUA: '',
-    req: '.*hub\\.com',
-    res: actionDefaultResultValueMap[RewriteType.REDIRECT].res,
-    value: ''
-  };
+  const initialRule: FlatRequestMappingRule = props.ruleToEdit || flatRuleInitialValue;
   const [addRuleForm] = Form.useForm<FlatRequestMappingRule>();
   const requestURLShouldBeRegexMessage = $gt('Request url to be redirected should be a valid regex');
   const rules = {
     action: [
       { message: $gt('You should choose an action'), required: true }
+    ],
+    keepQueryParams: [
+      { required: true }
     ],
     name: [
       { message: $gt('Field name should not be empty'), required: true }
@@ -105,6 +102,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
   const saveToWindowLSMessage = $gt('Save rule to window.localStorage instead💔');
   const saveSuccessMessage = $gt('Save Success❤');
   const clearSuccessMessage = $gt('Clear success');
+  // onFinish参数只会给出目前表单展示的字段，比如 Set UA 不会给 name value 字段
   const onFinish = props.onFinish || ((flatRequestRule: FlatRequestMappingRule) => {
     const newHansReResMap = [...hansReResMap];
     const requestRule = transformIntoRequestMappingRule(flatRequestRule);
@@ -201,6 +199,16 @@ const AddRuleForm: React.FC<Props> = (props) => {
 
         <Form.Item
           {...redirectTypeLayout}
+          label={$gt('Keep Query Params')}
+          name="keepQueryParams"
+          rules={rules.keepQueryParams}
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+
+        <Form.Item
+          {...redirectTypeLayout}
           label={$gt('Redirect Type')}
         >
           <span className={styles.redirectType}>
@@ -287,11 +295,11 @@ const AddRuleForm: React.FC<Props> = (props) => {
             {$gt('Reset Form')}
           </Button>
           {
-            props.showClearStorageBtn ? (
+            props.showClearStorageBtn && (
               <Button className={styles.btn} htmlType="button" onClick={clearLocalStorage}>
                 {$gt('Clear localStorage')}
               </Button>
-            ) : null
+            )
           }
         </Form.Item>
       </Form>

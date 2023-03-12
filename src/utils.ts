@@ -6,6 +6,7 @@ import {
   PostBodyParamAction,
   ProcessHeadersReturn,
   QueryParamAction,
+  RedirectAction,
   ReqHeaderAction,
   RequestMappingRule,
   RespHeaderAction,
@@ -27,7 +28,7 @@ import {
   isSetUAAction,
   plainObject
 } from './action-types';
-import { isPlainObject } from 'lodash';
+import { isPlainObject } from 'lodash-es';
 import isValidJson from './is-valid-json';
 import xhr from './xhr';
 
@@ -146,6 +147,18 @@ export function processUserAgent (
   return returnObject;
 }
 
+export function overrideQueryParams (urlObject: URL, redirectUrl: string, action: RedirectAction) {
+  if (!action.keepQueryParams) return redirectUrl;
+  try {
+    const redirectUrlObject = new URL(redirectUrl);
+    redirectUrlObject.search = urlObject.search;
+    redirectUrl = redirectUrlObject.toString();
+  } catch (e) {
+    console.error('overrideQueryParams() error', e);
+  }
+  return redirectUrl;
+}
+
 export function processRequest (url: string, hansReResMap: RequestMappingRule[], postBodyList?: plainObject[]): ActionDescription {
   const urlObject = new URL(url);
   const actionDescription: ActionDescription = {
@@ -182,6 +195,7 @@ export function processRequest (url: string, hansReResMap: RequestMappingRule[],
             redirectUrl = redirectUrl.replace(reg, action.res);
           } while (reg.test(redirectUrl));
         }
+        redirectUrl = overrideQueryParams(urlObject, redirectUrl, action);
         actionDescription.redirectUrl = redirectUrl;
       }
       if (isQueryParamAction(action)) {

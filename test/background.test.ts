@@ -1,8 +1,9 @@
-import { RewriteType } from '@/action-types';
+import { RewriteType, newRedirectAction, newSetUAAction } from '@/action-types';
 import {
   filterRulesForHeaderListener,
   getHeadersMap,
   mapToHttpHeaderArray,
+  overrideQueryParams,
   parsePostBody,
   processHeaders,
   processRequest,
@@ -10,7 +11,7 @@ import {
 } from '@/utils';
 import expect from 'expect';
 // TODO：搞清楚为什么不能 import shuffle from 'lodash/shuffle';
-import { orderBy, sample, shuffle } from 'lodash';
+import { orderBy, sample, shuffle } from 'lodash-es';
 import xhr from '@/xhr';
 
 jest.mock('../src/xhr', () => {
@@ -31,10 +32,7 @@ describe('processRequest()', () => {
   it('res is file protocol', () => {
     const hansReResMap = [
       {
-        action: {
-          res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js',
-          type: RewriteType.REDIRECT
-        },
+        action: newRedirectAction('file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js'),
         checked: true,
         req: 'https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js'
       }
@@ -43,13 +41,10 @@ describe('processRequest()', () => {
     expect(url).toBe('data:text/javascript;charset=utf-8,console.log(\'hello%20world\')%0A');
   });
 
-  it('rule does not match', () => {
+  it('redirect rule does not match', () => {
     const hansReResMap = [
       {
-        action: {
-          res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\2.js',
-          type: RewriteType.REDIRECT
-        },
+        action: newRedirectAction('file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\2.js'),
         checked: true,
         req: 'https://g.csdnimg.cn/side-toolbar/3.4/side-toolbar.js'
       }
@@ -61,10 +56,7 @@ describe('processRequest()', () => {
   it('res is http protocol', () => {
     const hansReResMap = [
       {
-        action: {
-          res: 'baidu.com',
-          type: RewriteType.REDIRECT
-        },
+        action: newRedirectAction('baidu.com'),
         checked: true,
         req: 'zhihu.com'
       }
@@ -87,10 +79,7 @@ describe('processRequest()', () => {
   it('not checked', () => {
     const hansReResMap = [
       {
-        action: {
-          res: 'file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js',
-          type: RewriteType.REDIRECT
-        },
+        action: newRedirectAction('file://D:\\js_practice\\hans-reres\\chrome-plugin-hans-reres-v0.0.0\\1.js'),
         checked: false,
         req: 'https://g.csdnimg.cn/side-toolbar/3.0/side-toolbar.js'
       }
@@ -99,13 +88,22 @@ describe('processRequest()', () => {
     expect(url).toBeUndefined();
   });
 
+  it('redirect rule regexp', () => {
+    const hansReResMap = [
+      {
+        action: newRedirectAction('https://baidu.com/?role=acmer'),
+        checked: true,
+        req: '.*\\.csdn\\.net.*'
+      }
+    ];
+    const { redirectUrl } = processRequest('https://yunchong.blog.csdn.net/article/details/128901550?src=abc', hansReResMap);
+    expect(redirectUrl).toBe('https://baidu.com/?role=acmer');
+  });
+
   it('add query param', () => {
     const hansReResMap = [
       {
-        action: {
-          newUA: 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5',
-          type: RewriteType.SET_UA
-        },
+        action: newSetUAAction('Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5'),
         checked: true,
         req: '.*idu\\.com'
       },
@@ -136,10 +134,7 @@ describe('processRequest()', () => {
   it('set query param', () => {
     const hansReResMap = [
       {
-        action: {
-          newUA: 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5',
-          type: RewriteType.SET_UA
-        },
+        action: newSetUAAction('Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5'),
         checked: true,
         req: '.*idu\\.com'
       },
@@ -170,10 +165,7 @@ describe('processRequest()', () => {
   it('delete query param', () => {
     const hansReResMap = [
       {
-        action: {
-          newUA: 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5',
-          type: RewriteType.SET_UA
-        },
+        action: newSetUAAction('Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5'),
         checked: true,
         req: '.*idu\\.com'
       },
@@ -203,18 +195,12 @@ describe('processRequest()', () => {
   it('If add query param and redirect appear at the same time, we should only redirect the request', () => {
     const hansReResMap = [
       {
-        action: {
-          res: 'https://baidu.com',
-          type: RewriteType.REDIRECT
-        },
+        action: newRedirectAction('https://baidu.com'),
         checked: true,
         req: '.*\\.csdn\\.net'
       },
       {
-        action: {
-          newUA: 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5',
-          type: RewriteType.SET_UA
-        },
+        action: newSetUAAction('Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5'),
         checked: true,
         req: '.*\\.csdn\\.net'
       },
@@ -252,10 +238,7 @@ describe('processRequest()', () => {
         req: '.*\\.csdn\\.net'
       },
       {
-        action: {
-          res: 'https://baidu.com',
-          type: RewriteType.REDIRECT
-        },
+        action: newRedirectAction('https://baidu.com'),
         checked: true,
         req: '.*\\.csdn\\.net'
       }
@@ -269,10 +252,7 @@ describe('processRequest()', () => {
   it('cancel rule goes after redirect rule', () => {
     const hansReResMap = [
       {
-        action: {
-          res: 'file://D:/1.js',
-          type: RewriteType.REDIRECT
-        },
+        action: newRedirectAction('file://D:/1.js'),
         checked: true,
         req: '.*\\.csdn\\.net'
       },
@@ -285,6 +265,52 @@ describe('processRequest()', () => {
     const { cancel, redirectUrl } = processRequest('https://blog.csdn.net', hansReResMap);
     expect(redirectUrl).toBe('data:text/javascript;charset=utf-8,console.log(\'hello%20world\')%0A');
     expect(cancel).toBeFalsy();
+  });
+
+  it('overrideQueryParams() exception', () => {
+    const redirectUrl = overrideQueryParams(new URL('http://baidu.com'), 'foo bar', newRedirectAction('https://baidu.com', true));
+    expect(redirectUrl).toBe('foo bar');
+  });
+
+  it('RedirectAction keepQueryParams = true', () => {
+    const hansReResMap = [
+      {
+        action: newRedirectAction('https://baidu.com/?role=acmer', true),
+        checked: true,
+        req: '.*\\.csdn\\.net'
+      }
+    ];
+    const { redirectUrl } = processRequest('https://blog.csdn.net/?rate=2400&has_job=false', hansReResMap);
+    expect(redirectUrl).toBe('https://baidu.com/?rate=2400&has_job=false');
+  });
+
+  it('RedirectAction keepQueryParams = true', () => {
+    const hansReResMap = [
+      {
+        action: newRedirectAction('https://baidu.com/?role=acmer', true),
+        checked: true,
+        req: '.*\\.csdn\\.net.*'
+      }
+    ];
+    const { redirectUrl } = processRequest('https://yunchong.blog.csdn.net/article/details/128901550?src=abc', hansReResMap);
+    expect(redirectUrl).toBe('https://baidu.com/?src=abc');
+  });
+
+  it('Multiple RedirectActions', () => {
+    const hansReResMap = [
+      {
+        action: newRedirectAction('https://baidu.com/?role=acmer', true),
+        checked: true,
+        req: '.*\\.csdn\\.net'
+      },
+      {
+        action: newRedirectAction('https://zhihu.com/?foo=bar', true),
+        checked: true,
+        req: '.*baidu.com'
+      }
+    ];
+    const { redirectUrl } = processRequest('https://blog.csdn.net/?rate=2400&has_job=false', hansReResMap);
+    expect(redirectUrl).toBe('https://zhihu.com/?rate=2400&has_job=false');
   });
 
   it('cancel rule and query param rule', () => {
@@ -522,12 +548,12 @@ describe('processHeaders() and processUserAgent()', () => {
   const resultUA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5';
   const setUARules = [
     {
-      action: { newUA: 'foo bar', type: RewriteType.SET_UA },
+      action: newSetUAAction('foo bar'),
       checked: true,
       req: 'baidu\\.com'
     },
     {
-      action: { newUA: resultUA, type: RewriteType.SET_UA },
+      action: newSetUAAction(resultUA),
       checked: true,
       req: '.*du\\.com'
     }
