@@ -14,6 +14,7 @@ import {
 import Button from 'antd/es/button';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
+import MockResponseEditor from './MockResponseEditor';
 import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined';
 import React, { ReactNode, useContext } from 'react';
 import Select from 'antd/es/select';
@@ -227,6 +228,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
     ),
     [RewriteType.BLOCK_REQUEST]: null,
     [RewriteType.BLOCK_IF_POST_BODY_PARAM_CONTAINS_NAME]: getNameFormField($gt('Input param name'), postBodyParamTooltip),
+    [RewriteType.MOCK_RESPONSE]: <MockResponseEditor addRuleForm={addRuleForm} />,
     [RewriteType.ADD_QUERY_PARAM]: getNameValueFormFields(
       $gt('Input param name'), $gt('Input param value')
     ),

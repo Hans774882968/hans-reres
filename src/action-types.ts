@@ -3,6 +3,7 @@ export enum RewriteType {
   REDIRECT = 'Redirect',
   BLOCK_REQUEST = 'Block Request',
   BLOCK_IF_POST_BODY_PARAM_CONTAINS_NAME = 'Block If Post Body Param Contains Name',
+  MOCK_RESPONSE = 'Mock Response',
   ADD_QUERY_PARAM = 'Add Query Param',
   MODIFY_QUERY_PARAM = 'Modify Query Param',
   DELETE_QUERY_PARAM = 'Delete Query Param',
@@ -29,6 +30,7 @@ export interface FlatRequestMappingRule {
   newUA: string
   name: string
   value: string
+  dataType: ResponseType
 }
 
 export interface Action {
@@ -48,6 +50,11 @@ export type BlockRequestAction = Action;
 
 export interface PostBodyParamAction extends Action {
   name: string
+}
+
+export interface MockResponseAction extends Action {
+  dataType: ResponseType
+  value: string
 }
 
 export interface AddQueryParamAction extends Action {
@@ -114,6 +121,10 @@ export function isPostBodyParamAction (o: Action): o is PostBodyParamAction {
   return o.type === RewriteType.BLOCK_IF_POST_BODY_PARAM_CONTAINS_NAME;
 }
 
+export function isMockResponseAction (o: Action): o is MockResponseAction {
+  return o.type === RewriteType.MOCK_RESPONSE;
+}
+
 export function isAddQueryParamAction (o: Action): o is AddQueryParamAction {
   return o.type === RewriteType.ADD_QUERY_PARAM;
 }
@@ -176,11 +187,35 @@ export function newSetUAAction (newUA: string) {
   return { newUA, type: RewriteType.SET_UA };
 }
 
+export function newMockResponseAction (dataType: ResponseType, value: string) {
+  return { dataType, type: RewriteType.MOCK_RESPONSE, value };
+}
+
+export enum ResponseType {
+  JSON = 'JSON',
+  JS = 'JS',
+  CSS = 'CSS',
+  XML = 'XML',
+  OTHER = 'Other'
+}
+
+export const dataTypeToDefaultValue = {
+  [ResponseType.JSON]: '{ "message": "success", "retcode": 0 }',
+  [ResponseType.JS]: 'console.log("hello world");',
+  [ResponseType.CSS]: 'body {\n  color: red;\n}',
+  [ResponseType.XML]: '<h1>hello world</h1>',
+  [ResponseType.OTHER]: ''
+};
+
 export const actionDefaultResultValueMap = {
   [RewriteType.REDIRECT]: { keepQueryParams: false, res: 'https://baidu.com' },
   [RewriteType.SET_UA]: { newUA: 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5' },
   [RewriteType.BLOCK_REQUEST]: {},
   [RewriteType.BLOCK_IF_POST_BODY_PARAM_CONTAINS_NAME]: { name: 'param_to_detect' },
+  [RewriteType.MOCK_RESPONSE]: {
+    dataType: ResponseType.JSON,
+    value: dataTypeToDefaultValue[ResponseType.JSON]
+  },
   [RewriteType.ADD_QUERY_PARAM]: { name: 'role', value: 'acmer' },
   [RewriteType.MODIFY_QUERY_PARAM]: { name: 'rate', value: '2400' },
   [RewriteType.DELETE_QUERY_PARAM]: { name: 'param_to_delete' },
@@ -195,6 +230,7 @@ export const actionDefaultResultValueMap = {
 export const flatRuleInitialValue = {
   action: RewriteType.REDIRECT,
   checked: true,
+  dataType: ResponseType.JSON,
   keepQueryParams: false,
   name: '',
   newUA: '',
@@ -207,6 +243,7 @@ export function transformIntoRequestMappingRule (o: FlatRequestMappingRule): Req
   const action: Action = (() => {
     if (o.action === RewriteType.REDIRECT) return newRedirectAction(o.res, o.keepQueryParams);
     if (o.action === RewriteType.SET_UA) return newSetUAAction(o.newUA);
+    if (o.action === RewriteType.MOCK_RESPONSE) return newMockResponseAction(o.dataType, o.value);
     return { name: o.name, type: o.action, value: o.value };
   })();
   return {
@@ -220,6 +257,7 @@ export function transformIntoFlatRequestMappingRule (o: RequestMappingRule): Fla
   const ret: FlatRequestMappingRule = {
     action: o.action.type,
     checked: o.checked,
+    dataType: ResponseType.JSON,
     keepQueryParams: false,
     name: '',
     newUA: '',

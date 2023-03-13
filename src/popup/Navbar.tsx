@@ -41,7 +41,6 @@ const Navbar: React.FC = () => {
           />
         </Col>
       </Row>
-
     </header>
   );
 };

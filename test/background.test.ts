@@ -1,4 +1,4 @@
-import { RewriteType, newRedirectAction, newSetUAAction } from '@/action-types';
+import { ResponseType, RewriteType, newMockResponseAction, newRedirectAction, newSetUAAction } from '@/action-types';
 import {
   filterRulesForHeaderListener,
   getHeadersMap,
@@ -497,6 +497,47 @@ describe('Post Body params modification', () => {
       expect(cancel).toBeTruthy();
       expect(postBodyParamsShouldBlock).toBeTruthy();
     }
+  });
+
+  it('mock response rule: JSON', () => {
+    const hansReResMap = [
+      {
+        action: newMockResponseAction(ResponseType.JSON, '{ "retcode": 0, "message": "success" }'),
+        checked: true,
+        req: 'baidu'
+      }
+    ];
+    const { redirectUrl } = processRequest('https://baidu.com', hansReResMap);
+    expect(redirectUrl).toBe('data:text/json;charset=utf-8,%7B%20%22retcode%22%3A%200%2C%20%22message%22%3A%20%22success%22%20%7D');
+  });
+
+  it('mock response rule: Other', () => {
+    const hansReResMap = [
+      {
+        action: newMockResponseAction(ResponseType.OTHER, '### title3\n#### title4'),
+        checked: true,
+        req: 'baidu'
+      }
+    ];
+    const { redirectUrl } = processRequest('https://baidu.com', hansReResMap);
+    expect(redirectUrl).toBe('data:text/plain;charset=utf-8,%23%23%23%20title3%0A%23%23%23%23%20title4');
+  });
+
+  it('mock response rule goes after redirect rule', () => {
+    const hansReResMap = [
+      {
+        action: newRedirectAction('https://www.csdn.com'),
+        checked: true,
+        req: '.*baidu.com'
+      },
+      {
+        action: newMockResponseAction(ResponseType.JSON, '{ "retcode": 0, "message": "success" }'),
+        checked: true,
+        req: '.*csdn.com'
+      }
+    ];
+    const { redirectUrl } = processRequest('https://baidu.com', hansReResMap);
+    expect(redirectUrl).toBe('data:text/json;charset=utf-8,%7B%20%22retcode%22%3A%200%2C%20%22message%22%3A%20%22success%22%20%7D');
   });
 });
 

@@ -15,6 +15,16 @@
 4. 使用`react + vite`展示了一套完整的Chrome插件开发的解决方案。包括：开发时预览、单元测试、构建。
 5. 对`useLocalStorageState`hook源码进行了少量修改，并增加了配套的单元测试用例，以适应Chrome插件开发的需求。
 
+本文52pojie：https://www.52pojie.cn/thread-1757481-1-1.html
+
+本文CSDN：https://blog.csdn.net/hans774882968/article/details/129483966
+
+本文juejin：https://juejin.cn/post/7209625823581601848
+
+**作者：[hans774882968](https://blog.csdn.net/hans774882968)以及[hans774882968](https://juejin.cn/user/1464964842528888)以及[hans774882968](https://www.52pojie.cn/home.php?mod=space&uid=1906177)**
+
+**后续还会更新**：仿`request-interceptor`规则组、批量导入规则、`react + vite`项目引入OB混淆……
+
 ## Chrome插件ReRes源码赏析
 
 `popup`页面和`options`页面和`background.js`唯一的联系就是，其他页面需要将数据写入背景页的`localStorage`：
@@ -1188,6 +1198,10 @@ export function overrideQueryParams (urlObject: URL, redirectUrl: string, action
   return redirectUrl;
 }
 ```
+
+### Mock Response功能
+
+我们已经从`ReRes`源码学到：TODO
 
 ### 请求头、响应头的处理
 

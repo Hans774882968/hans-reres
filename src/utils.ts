@@ -10,6 +10,7 @@ import {
   ReqHeaderAction,
   RequestMappingRule,
   RespHeaderAction,
+  ResponseType,
   isAddQueryParamAction,
   isAddReqHeaderAction,
   isAddRespHeaderAction,
@@ -17,6 +18,7 @@ import {
   isDeleteQueryParamAction,
   isDeleteReqHeaderAction,
   isDeleteRespHeaderAction,
+  isMockResponseAction,
   isModifyQueryParamAction,
   isModifyReqHeaderAction,
   isModifyRespHeaderAction,
@@ -159,6 +161,14 @@ export function overrideQueryParams (urlObject: URL, redirectUrl: string, action
   return redirectUrl;
 }
 
+const dataTypeToSupportedDataProtocolType: Record<ResponseType, string> = {
+  [ResponseType.JSON]: 'json',
+  [ResponseType.CSS]: 'css',
+  [ResponseType.JS]: 'js',
+  [ResponseType.XML]: 'xml',
+  [ResponseType.OTHER]: 'text'
+};
+
 export function processRequest (url: string, hansReResMap: RequestMappingRule[], postBodyList?: plainObject[]): ActionDescription {
   const urlObject = new URL(url);
   const actionDescription: ActionDescription = {
@@ -183,6 +193,10 @@ export function processRequest (url: string, hansReResMap: RequestMappingRule[],
       }
       if (isPostBodyParamAction(action)) {
         actionDescription.postBodyParamsShouldBlock = actionDescription.postBodyParamsShouldBlock || shouldPostBodyParamsBlock(postBodyList || [], action);
+      }
+      if (isMockResponseAction(action)) {
+        const supportedDataProtocolType = dataTypeToSupportedDataProtocolType[action.dataType];
+        actionDescription.redirectUrl = getDataProtocolString(action.value, supportedDataProtocolType);
       }
       if (isRedirectAction(action)) {
         if (/^file:\/\//.test(action.res)) {
@@ -221,19 +235,7 @@ const typeMap = {
   'xml': 'text/xml'
 };
 
-export function getLocalFileUrl (url: string) {
-  const arr = url.split('.');
-  let type = arr[arr.length - 1];
-  let content: string | Document | null = '';
-  try {
-    content = xhr(url);
-  } catch (e) {
-    content = '{ "retcode": -404, "message": "Sorry to tell you that the request to local file failed. The possible reason is that the local file does not exist. -- from chrome plugin hans-reres", "data": null }';
-    type = 'json';
-  }
-  if (typeof content !== 'string') {
-    return '';
-  }
+export function getDataProtocolString (content: string, type: string) {
   content = encodeURIComponent(
     type === 'js' ?
       content.replace(/[\u0080-\uffff]/g, ($0: string) => {
@@ -249,6 +251,22 @@ export function getLocalFileUrl (url: string) {
   return `data:${
     type in typeMap ? typeMap[type as keyof typeof typeMap] : typeMap.txt
   };charset=utf-8,${content}`;
+}
+
+export function getLocalFileUrl (url: string) {
+  const arr = url.split('.');
+  let type = arr[arr.length - 1];
+  let content: string | Document | null = '';
+  try {
+    content = xhr(url);
+  } catch (e) {
+    content = '{ "retcode": -404, "message": "Sorry to tell you that the request to local file failed. The possible reason is that the local file does not exist. -- from chrome plugin hans-reres", "data": null }';
+    type = 'json';
+  }
+  if (typeof content !== 'string') {
+    return '';
+  }
+  return getDataProtocolString(content, type);
 }
 
 export const isSubSequence = (long: string, short: string) => {
