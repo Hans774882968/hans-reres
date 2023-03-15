@@ -23,9 +23,9 @@ i18n
     }
   });
 
-export const $gt = (key: string | string[]) => {
+export const $gt = (key: string | string[], options?: object) => {
   const { t } = useTranslation();
-  return t(key);
+  return options ? t(key, options) : t(key);
 };
 
 export const langOptions = [

@@ -28,7 +28,7 @@ export default function transformManifestPlugin (options: {
           result,
           'utf-8',
           (err) => {
-            if (err) console.log('error writing to', resultPath, err);
+            if (err) console.error('error writing to', resultPath, err);
           }
         );
       });

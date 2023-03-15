@@ -196,14 +196,16 @@ export enum ResponseType {
   JS = 'JS',
   CSS = 'CSS',
   XML = 'XML',
+  HTML = 'HTML',
   OTHER = 'Other'
 }
 
 export const dataTypeToDefaultValue = {
   [ResponseType.JSON]: '{ "message": "success", "retcode": 0 }',
-  [ResponseType.JS]: 'console.log("hello world");',
-  [ResponseType.CSS]: 'body {\n  color: red;\n}',
-  [ResponseType.XML]: '<h1>hello world</h1>',
+  [ResponseType.JS]: 'function main(){console.log("hello world");}main()',
+  [ResponseType.CSS]: 'body {color: red;}',
+  [ResponseType.XML]: '<user id="1"><male>man</male><age>18</age></user>',
+  [ResponseType.HTML]: '<h1><div><span style="font-weight: normal">hello</span> world</div></h1>',
   [ResponseType.OTHER]: ''
 };
 

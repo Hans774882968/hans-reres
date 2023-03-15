@@ -2,7 +2,7 @@ export default {
   'Action': 'Action',
   'Automatically detect the protocol of your response url, such as: http, file.': 'Automatically detect the protocol of your response url, such as: http, file.',
   'Beautify': 'Beautify',
-  'Beautify JSON': 'Beautify JSON',
+  'Beautify {{language}}': 'Beautify {{language}}',
   ['Block request if the request is POST request and post body is JSON string and post body param name list contains specific name. Note that I will only check the outermost keys.']: 'Block request if the request is POST request and post body is JSON string and post body param name list contains specific name. Note that I will only check the outermost keys.',
   'Clear localStorage': 'Clear localStorage',
   'Clear success': 'Clear success',

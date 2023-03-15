@@ -166,6 +166,7 @@ const dataTypeToSupportedDataProtocolType: Record<ResponseType, string> = {
   [ResponseType.CSS]: 'css',
   [ResponseType.JS]: 'js',
   [ResponseType.XML]: 'xml',
+  [ResponseType.HTML]: 'html',
   [ResponseType.OTHER]: 'text'
 };
 

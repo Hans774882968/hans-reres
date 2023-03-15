@@ -1201,7 +1201,20 @@ export function overrideQueryParams (urlObject: URL, redirectUrl: string, action
 
 ### Mock Response功能
 
-我们已经从`ReRes`源码学到：TODO
+我的插件的`Mock Response`功能可以说是前端开发的利器——从此Mock接口返回数据没有任何门槛。这一节就讲述这个功能的实现思路。我们已经从`ReRes`源码学到：为了实现将请求重定向到本机（即`file`协议URL），需要先发XHR请求获取本机文件内容，再将其拼接为`data`协议的URL。于是我们可以在`ReRes`和我的插件的重定向功能中，直接指定重定向URL为`data`协议URL，来实现`Mock Response`功能。但这样不太方便，所以在此我引入一个新的操作类型`MockResponseAction`：
+
+```ts
+export interface MockResponseAction extends Action {
+  dataType: ResponseType // necessary，background.js 用不到但编辑对话框要用到
+  value: string
+}
+```
+
+接下来在表单中加一个下拉框，可以选择编程语言。对于选中的编程语言，展示的组件为对应语言的编辑器（可以附加一个“格式化”按钮）。[代码传送门](https://github.com/Hans774882968/hans-reres/blob/main/src/popup/mock-response/MockResponseEditor.tsx)
+
+这一块在交互方面的想象空间不小，比如：每种语言提供一个功能强大的编辑器。~~可惜这里（IDE）空白处太小，写不下~~
+
+另外，为了可测试性，应该把负责格式化操作的代码和与UI有关的代码隔离开。[格式化相关代码](https://github.com/Hans774882968/hans-reres/blob/main/src/popup/mock-response/beautify.ts)
 
 ### 请求头、响应头的处理
 

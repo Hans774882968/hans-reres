@@ -14,7 +14,7 @@ import {
 import Button from 'antd/es/button';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
-import MockResponseEditor from './MockResponseEditor';
+import MockResponseEditor from './mock-response/MockResponseEditor';
 import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined';
 import React, { ReactNode, useContext } from 'react';
 import Select from 'antd/es/select';
