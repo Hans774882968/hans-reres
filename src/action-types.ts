@@ -209,7 +209,7 @@ export const dataTypeToDefaultValue = {
   [ResponseType.OTHER]: ''
 };
 
-export const actionDefaultResultValueMap = {
+export const actionDefaultResultValueMap: Record<RewriteType, Partial<FlatRequestMappingRule>> = {
   [RewriteType.REDIRECT]: { keepQueryParams: false, res: 'https://baidu.com' },
   [RewriteType.SET_UA]: { newUA: 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5' },
   [RewriteType.BLOCK_REQUEST]: {},
@@ -237,7 +237,7 @@ export const flatRuleInitialValue = {
   name: '',
   newUA: '',
   req: '.*hub\\.com',
-  res: actionDefaultResultValueMap[RewriteType.REDIRECT].res,
+  res: actionDefaultResultValueMap[RewriteType.REDIRECT].res as string,
   value: ''
 };
 

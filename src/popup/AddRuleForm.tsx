@@ -187,7 +187,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
       </Form.Item>
     );
   }
-  const actionFieldMap = {
+  const actionFieldMap: Record<RewriteType, JSX.Element | null> = {
     [RewriteType.REDIRECT]: (
       <>
         <Form.Item label={respUrlTooltip} name="res" rules={rules.res}>
@@ -266,7 +266,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
           <Input
             allowClear
             type="text"
-            placeholder={$gt('Input request url to match')!}
+            placeholder={$gt('Input request url to match')}
           />
         </Form.Item>
 
