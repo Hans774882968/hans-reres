@@ -1,18 +1,13 @@
 import { $gt } from '@/i18n/i18n-init';
-import { FlatRequestMappingRule, ResponseType } from '@/action-types';
-import { FormInstance } from 'antd/es/form/hooks/useForm';
+import { ResponseType } from '@/action-types';
 import { beautifyJSON } from './beautify';
-import Button from 'antd/es/button';
+import { useAddRuleFormContext } from '../AddRuleFormContext';
 import CodeMirror from './CodeMirror';
 import Form from 'antd/es/form';
 import React from 'react';
 
-interface Props {
-  addRuleForm: FormInstance<FlatRequestMappingRule>
-}
-
-const JsonEditor: React.FC<Props> = (props) => {
-  const { addRuleForm } = props;
+const JsonEditor: React.FC = () => {
+  const { addRuleForm } = useAddRuleFormContext()!;
   const requestRuleValueFieldValue = Form.useWatch('value', addRuleForm);
 
   const valueShouldBeValidJSONMessage = $gt('Response text should be a valid JSON string.');
@@ -40,18 +35,11 @@ const JsonEditor: React.FC<Props> = (props) => {
 
   // TODO：不能指定 trigger 属性，会导致表单 rules 校验不能触发
   return (
-    <Form.Item
-      label={$gt('Value')}
-      name="value"
-      rules={responseValueRule}
-      valuePropName="code"
-    >
-      <CodeMirror lang={ResponseType.JSON}>
-        <Button onClick={beautifyJSONBtnHandler}>
-          {$gt('Beautify {{language}}', { language: ResponseType.JSON })}
-        </Button>
-      </CodeMirror>
-    </Form.Item>
+    <CodeMirror
+      lang={ResponseType.JSON}
+      beautifyHandler={beautifyJSONBtnHandler}
+      responseValueRule={responseValueRule}
+    />
   );
 };
 

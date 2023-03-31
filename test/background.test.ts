@@ -1,4 +1,10 @@
-import { ResponseType, RewriteType, newMockResponseAction, newRedirectAction, newSetUAAction } from '@/action-types';
+import {
+  ResponseType,
+  RewriteType,
+  newMockResponseAction,
+  newRedirectAction,
+  newSetUAAction
+} from '@/action-types';
 import {
   filterRulesForHeaderListener,
   getHeadersMap,

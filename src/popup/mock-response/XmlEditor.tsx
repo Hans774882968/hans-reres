@@ -1,18 +1,12 @@
-import { $gt } from '@/i18n/i18n-init';
-import { FlatRequestMappingRule, ResponseType } from '@/action-types';
-import { FormInstance } from 'antd/es/form/hooks/useForm';
+import { ResponseType } from '@/action-types';
 import { beautifyXML } from './beautify';
-import Button from 'antd/es/button';
+import { useAddRuleFormContext } from '../AddRuleFormContext';
 import CodeMirror from './CodeMirror';
 import Form from 'antd/es/form';
 import React from 'react';
 
-interface Props {
-  addRuleForm: FormInstance<FlatRequestMappingRule>
-}
-
-const XmlEditor: React.FC<Props> = (props) => {
-  const { addRuleForm } = props;
+const XmlEditor: React.FC = () => {
+  const { addRuleForm } = useAddRuleFormContext()!;
   const requestRuleValueFieldValue = Form.useWatch('value', addRuleForm);
 
   const beautifyXMLBtnHandler = () => {
@@ -23,17 +17,7 @@ const XmlEditor: React.FC<Props> = (props) => {
   };
 
   return (
-    <Form.Item
-      label={$gt('Value')}
-      name="value"
-      valuePropName="code"
-    >
-      <CodeMirror lang={ResponseType.XML}>
-        <Button onClick={beautifyXMLBtnHandler}>
-          {$gt('Beautify {{language}}', { language: ResponseType.XML })}
-        </Button>
-      </CodeMirror>
-    </Form.Item>
+    <CodeMirror lang={ResponseType.XML} beautifyHandler={beautifyXMLBtnHandler} />
   );
 };
 

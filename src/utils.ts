@@ -161,14 +161,23 @@ export function overrideQueryParams (urlObject: URL, redirectUrl: string, action
   return redirectUrl;
 }
 
-const dataTypeToSupportedDataProtocolType: Record<ResponseType, string> = {
+const dataTypeToSupportedDataProtocolType: Record<ResponseType, supportedDataTypes> = {
   [ResponseType.JSON]: 'json',
   [ResponseType.CSS]: 'css',
   [ResponseType.JS]: 'js',
   [ResponseType.XML]: 'xml',
   [ResponseType.HTML]: 'html',
-  [ResponseType.OTHER]: 'text'
+  [ResponseType.OTHER]: 'txt'
 };
+
+export const CHROME_DATA_LENGTH_LIMIT = 2097152;
+
+export function showDataLengthTooLargeMessage (s: string) {
+  const len = getByteLength(s);
+  if (len > CHROME_DATA_LENGTH_LIMIT) {
+    console.warn(`[hans-reres] The length of the data protocol URL does not meet the limit of the Chrome (${len} bytes / 2MB). So it will be discarded by Chrome.`);
+  }
+}
 
 export function processRequest (url: string, hansReResMap: RequestMappingRule[], postBodyList?: plainObject[]): ActionDescription {
   const urlObject = new URL(url);
@@ -196,14 +205,15 @@ export function processRequest (url: string, hansReResMap: RequestMappingRule[],
         actionDescription.postBodyParamsShouldBlock = actionDescription.postBodyParamsShouldBlock || shouldPostBodyParamsBlock(postBodyList || [], action);
       }
       if (isMockResponseAction(action)) {
-        const supportedDataProtocolType = dataTypeToSupportedDataProtocolType[action.dataType];
-        actionDescription.redirectUrl = getDataProtocolString(action.value, supportedDataProtocolType);
+        actionDescription.redirectUrl = getMockResponseData(action.value, action.dataType);
+        showDataLengthTooLargeMessage(actionDescription.redirectUrl);
       }
       if (isRedirectAction(action)) {
         if (/^file:\/\//.test(action.res)) {
           do {
             redirectUrl = redirectUrl.replace(reg, action.res);
             redirectUrl = getLocalFileUrl(redirectUrl);
+            showDataLengthTooLargeMessage(redirectUrl);
           } while (reg.test(redirectUrl));
         } else {
           do {
@@ -222,7 +232,13 @@ export function processRequest (url: string, hansReResMap: RequestMappingRule[],
   return actionDescription;
 }
 
-const typeMap = {
+type supportedDataTypes = 'css' | 'gif' | 'html' | 'jpeg' | 'jpg' | 'js' | 'json' | 'png' | 'txt' | 'webp' | 'xml';
+
+function isSupportedDataTypes (s: string): s is supportedDataTypes {
+  return s in typeMap;
+}
+
+const typeMap: Record<supportedDataTypes, string> = {
   'css': 'text/css',
   'gif': 'image/gif',
   'html': 'text/html',
@@ -236,7 +252,7 @@ const typeMap = {
   'xml': 'text/xml'
 };
 
-export function getDataProtocolString (content: string, type: string) {
+export function unsafeGetDataProtocolString (content: string, type: supportedDataTypes) {
   content = encodeURIComponent(
     type === 'js' ?
       content.replace(/[\u0080-\uffff]/g, ($0: string) => {
@@ -249,9 +265,17 @@ export function getDataProtocolString (content: string, type: string) {
     const b64result = btoa(content);
     return `data:${typeMap[type as 'jpg' | 'jpeg' | 'png']};base64,${b64result}`;
   }
-  return `data:${
-    type in typeMap ? typeMap[type as keyof typeof typeMap] : typeMap.txt
-  };charset=utf-8,${content}`;
+  return `data:${typeMap[type]};charset=utf-8,${content}`;
+}
+
+export function safeGetDataProtocolString (content: string, type: string) {
+  const _type: supportedDataTypes = isSupportedDataTypes(type) ? type : 'txt';
+  return unsafeGetDataProtocolString(content, _type);
+}
+
+export function getMockResponseData (content: string, dataType: ResponseType) {
+  const supportedDataProtocolType = dataTypeToSupportedDataProtocolType[dataType];
+  return unsafeGetDataProtocolString(content, supportedDataProtocolType);
 }
 
 export function getLocalFileUrl (url: string) {
@@ -267,7 +291,7 @@ export function getLocalFileUrl (url: string) {
   if (typeof content !== 'string') {
     return '';
   }
-  return getDataProtocolString(content, type);
+  return safeGetDataProtocolString(content, type);
 }
 
 export const isSubSequence = (long: string, short: string) => {
@@ -284,3 +308,11 @@ export const isSubSequence = (long: string, short: string) => {
   }
   return j === shortStr.length;
 };
+
+export function getByteLength (s: string) {
+  try {
+    return new TextEncoder().encode(s).length;
+  } catch (e) {
+    return s.length;
+  }
+}

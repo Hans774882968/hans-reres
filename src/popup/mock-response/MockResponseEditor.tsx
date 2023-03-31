@@ -1,7 +1,7 @@
 import { $gt } from '@/i18n/i18n-init';
-import { FlatRequestMappingRule, ResponseType, dataTypeToDefaultValue } from '@/action-types';
-import { FormInstance } from 'antd/es/form/hooks/useForm';
+import { ResponseType, dataTypeToDefaultValue } from '@/action-types';
 import { isSubSequence } from '@/utils';
+import { useAddRuleFormContext } from '../AddRuleFormContext';
 import CssEditor from './CssEditor';
 import Form from 'antd/es/form';
 import HtmlEditor from './HtmlEditor';
@@ -12,14 +12,10 @@ import Select from 'antd/es/select';
 import TextEditor from './TextEditor';
 import XmlEditor from './XmlEditor';
 
-interface Props {
-  addRuleForm: FormInstance<FlatRequestMappingRule>
-}
-
 const responseOptions = Object.values(ResponseType).map(action => ({ label: action, value: action }));
 
-const MockResponseEditor: React.FC<Props> = (props) => {
-  const { addRuleForm } = props;
+const MockResponseEditor: React.FC = () => {
+  const { addRuleForm } = useAddRuleFormContext()!;
   const requestRuleDataTypeFieldValue = Form.useWatch('dataType', addRuleForm);
 
   const changeResponseType = (dataType: ResponseType) => {
@@ -27,11 +23,11 @@ const MockResponseEditor: React.FC<Props> = (props) => {
   };
 
   const editorsMap: Record<ResponseType, JSX.Element> = {
-    [ResponseType.JSON]: <JsonEditor addRuleForm={addRuleForm} />,
-    [ResponseType.JS]: <JsEditor addRuleForm={addRuleForm} />,
-    [ResponseType.CSS]: <CssEditor addRuleForm={addRuleForm} />,
-    [ResponseType.HTML]: <HtmlEditor addRuleForm={addRuleForm} />,
-    [ResponseType.XML]: <XmlEditor addRuleForm={addRuleForm} />,
+    [ResponseType.JSON]: <JsonEditor />,
+    [ResponseType.JS]: <JsEditor />,
+    [ResponseType.CSS]: <CssEditor />,
+    [ResponseType.HTML]: <HtmlEditor />,
+    [ResponseType.XML]: <XmlEditor />,
     [ResponseType.OTHER]: <TextEditor />
   };
 

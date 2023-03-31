@@ -45,6 +45,7 @@ export default {
   'Select action': '选择操作类型',
   'Select language': '选择语言',
   Submit: '提交',
+  'The length of the data protocol URL should meet the limit of the Chrome': 'data协议URL的长度应满足Chrome的限制',
   Value: '值',
   'You should choose an action': '你应该选择一个操作'
 };

@@ -200,7 +200,7 @@ export enum ResponseType {
   OTHER = 'Other'
 }
 
-export const dataTypeToDefaultValue = {
+export const dataTypeToDefaultValue: Record<ResponseType, string> = {
   [ResponseType.JSON]: '{ "message": "success", "retcode": 0 }',
   [ResponseType.JS]: 'function main(){console.log("hello world");}main()',
   [ResponseType.CSS]: 'body {color: red;}',

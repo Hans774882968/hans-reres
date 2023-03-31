@@ -1,4 +1,5 @@
 import { $gt } from '@/i18n/i18n-init';
+import { AddRuleFormProvider } from './AddRuleFormContext';
 import {
   FlatRequestMappingRule,
   RequestMappingRule,
@@ -49,7 +50,9 @@ const EditRuleForm: React.FC<Props> = (props) => {
       cancelButtonProps={{ style: { display: 'none' }}}
       onCancel={() => setDialogVisible(false)}
     >
-      <AddRuleForm minWidth={EDIT_FORM_WIDTH} ruleToEdit={flatRequestRule} onFinish={handleSubmitSuccess} />
+      <AddRuleFormProvider>
+        <AddRuleForm minWidth={EDIT_FORM_WIDTH} ruleToEdit={flatRequestRule} onFinish={handleSubmitSuccess} />
+      </AddRuleFormProvider>
     </Modal>
   );
 };

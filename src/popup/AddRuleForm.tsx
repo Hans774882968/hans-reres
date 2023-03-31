@@ -11,6 +11,7 @@ import {
   getRedirectType,
   isSubSequence
 } from '@/utils';
+import { useAddRuleFormContext } from './AddRuleFormContext';
 import Button from 'antd/es/button';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
@@ -54,9 +55,9 @@ function getActionOptions () {
 
 const AddRuleForm: React.FC<Props> = (props) => {
   const { hansReResMap, setHansReResMap, bg } = useContext(PopupContext)!;
+  const { addRuleForm } = useAddRuleFormContext()!;
 
   const initialRule: FlatRequestMappingRule = props.ruleToEdit || flatRuleInitialValue;
-  const [addRuleForm] = Form.useForm<FlatRequestMappingRule>();
   const requestURLShouldBeRegexMessage = $gt('Request url to be redirected should be a valid regex');
   const rules = {
     action: [
@@ -228,7 +229,7 @@ const AddRuleForm: React.FC<Props> = (props) => {
     ),
     [RewriteType.BLOCK_REQUEST]: null,
     [RewriteType.BLOCK_IF_POST_BODY_PARAM_CONTAINS_NAME]: getNameFormField($gt('Input param name'), postBodyParamTooltip),
-    [RewriteType.MOCK_RESPONSE]: <MockResponseEditor addRuleForm={addRuleForm} />,
+    [RewriteType.MOCK_RESPONSE]: <MockResponseEditor />,
     [RewriteType.ADD_QUERY_PARAM]: getNameValueFormFields(
       $gt('Input param name'), $gt('Input param value')
     ),

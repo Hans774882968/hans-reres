@@ -76,7 +76,7 @@ const onBeforeRequestListener = (details: WebRequestBodyDetails) => {
       // 针对Chrome的这种报错，我们只会尝试给出一个友好点的报错提示，不会擅自阻止报错的产生
       new URL(redirectUrl);
     } catch (e) {
-      console.error(`Please make sure that redirectURL '${redirectUrl}' is a valid url when using hans-reres. For example, 'baidu.com' is not a valid url.`);
+      console.error(`[hans-reres] Please make sure that redirectURL '${redirectUrl}' is a valid url when using hans-reres. For example, 'baidu.com' is not a valid url.`);
     }
     return redirectUrl === details.url ? {} : { redirectUrl };
   }

@@ -10,7 +10,7 @@
 
 ## 亮点
 1. 赏析了若干源码：`ReRes`、`request-interceptor`、`husky`……
-2. 探讨了jest配置的若干问题。如：使用“鸭子类型”技巧解决模块不可测试的问题、配置路径别名……
+2. 探讨了jest配置的若干问题。如：支持`lodash-es`等类型为es module的npm包、配置路径别名、解决使用了`TextEncoder`和`TextDecoder`的模块不能测试的问题……
 3. 编写构建脚本`scripts/build.ts`使得构建过程更为灵活。
 4. 使用`react + vite`展示了一套完整的Chrome插件开发的解决方案。包括：开发时预览、单元测试、构建。
 5. 对`useLocalStorageState`hook源码进行了少量修改，并增加了配套的单元测试用例，以适应Chrome插件开发的需求。
@@ -1028,7 +1028,7 @@ export function isReqHeaderAction (o: Action): o is ReqHeaderAction {
 `popup`、`options`页面需要用到的，各类型`Action`提供的默认值如下：
 
 ```ts
-export const actionDefaultResultValueMap = {
+export const actionDefaultResultValueMap: Record<RewriteType, Partial<FlatRequestMappingRule>> = {
   [RewriteType.REDIRECT]: { res: 'https://baidu.com' },
   [RewriteType.SET_UA]: { newUA: 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_0 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 FingerBrowser/1.5' },
   [RewriteType.BLOCK_REQUEST]: {},
@@ -1210,11 +1210,282 @@ export interface MockResponseAction extends Action {
 }
 ```
 
-接下来在表单中加一个下拉框，可以选择编程语言。对于选中的编程语言，展示的组件为对应语言的编辑器（可以附加一个“格式化”按钮）。[代码传送门](https://github.com/Hans774882968/hans-reres/blob/main/src/popup/mock-response/MockResponseEditor.tsx)
+接下来在表单中加一个下拉框，对应`MockResponseAction.dataType`，可以选择编程语言。对于选中的编程语言，展示的组件为对应语言的编辑器（可以附加一个“格式化”按钮）。[代码传送门](https://github.com/Hans774882968/hans-reres/blob/main/src/popup/mock-response/MockResponseEditor.tsx)
+
+目前支持的编程语言定义：
+
+```ts
+export enum ResponseType {
+  JSON = 'JSON',
+  JS = 'JS',
+  CSS = 'CSS',
+  XML = 'XML',
+  HTML = 'HTML',
+  OTHER = 'Other'
+}
+// 这里的默认值选择有讲究：期望能够直接看到beautify的效果
+export const dataTypeToDefaultValue: Record<ResponseType, string> = {
+  [ResponseType.JSON]: '{ "message": "success", "retcode": 0 }',
+  [ResponseType.JS]: 'function main(){console.log("hello world");}main()',
+  [ResponseType.CSS]: 'body {color: red;}',
+  [ResponseType.XML]: '<user id="1"><male>man</male><age>18</age></user>',
+  [ResponseType.HTML]: '<h1><div><span style="font-weight: normal">hello</span> world</div></h1>',
+  [ResponseType.OTHER]: ''
+};
+```
 
 这一块在交互方面的想象空间不小，比如：每种语言提供一个功能强大的编辑器。~~可惜这里（IDE）空白处太小，写不下~~
 
 另外，为了可测试性，应该把负责格式化操作的代码和与UI有关的代码隔离开。[格式化相关代码](https://github.com/Hans774882968/hans-reres/blob/main/src/popup/mock-response/beautify.ts)
+
+### Mock Response功能：代码编辑器
+
+首先考虑如何改造UI代码的结构。根据`MockResponseAction`的设计，入口组件`src/popup/mock-response/MockResponseEditor.tsx`是`antd form`的两个字段，伪代码如下：
+
+```tsx
+const MockResponseEditor: React.FC<Props> = (props) => {
+  const requestRuleDataTypeFieldValue = Form.useWatch('dataType', addRuleForm);
+  const editorsMap: Record<ResponseType, JSX.Element> = {
+    [ResponseType.JSON]: <JsonEditor addRuleForm={addRuleForm} />,
+    [ResponseType.JS]: <JsEditor addRuleForm={addRuleForm} />,
+    [ResponseType.CSS]: <CssEditor addRuleForm={addRuleForm} />,
+    [ResponseType.HTML]: <HtmlEditor addRuleForm={addRuleForm} />,
+    [ResponseType.XML]: <XmlEditor addRuleForm={addRuleForm} />,
+    [ResponseType.OTHER]: <TextEditor />
+  };
+  return (
+    <>
+      <Form.Item label={$gt('Response Type')} name="dataType">
+        <Select
+          placeholder={$gt('Please select')}
+          options={responseOptions}
+          onChange={changeResponseType}
+        />
+      </Form.Item>
+      {
+        editorsMap[requestRuleDataTypeFieldValue]
+      }
+    </>
+  );
+};
+```
+
+我们用一个map取出当前选择的语言对应的编辑器组件，每一个组件都是用`Form.Item`包裹的。其中，`TextEditor`最简单，如下：
+
+```tsx
+const TextEditor: React.FC = () => {
+  return (
+    <Form.Item label={$gt('Value')} name="value">
+      <Input.TextArea
+        rows={10}
+        placeholder={('Please input response')}
+        allowClear
+      />
+    </Form.Item>
+  );
+};
+```
+
+为了实现其他组件，首先需要进行开源编辑器的技术选型。一开始`JSON`编辑器我选择了`jsoneditor`，其光标和许多编辑器一样，是用一个`div`模拟光标。这类编辑器与本项目现有的`antd form`结构不相容：存在输入字符后丢失焦点的bug（TODO：原因暂未确定）。之后我换用了基于`contenteditable`的编辑器Code Mirror，发现没有以上bug。
+
+```bash
+npm i @uiw/react-codemirror
+# 安装语言插件
+npm i @codemirror/lang-json @codemirror/lang-javascript @codemirror/lang-css @codemirror/lang-html @codemirror/lang-xml
+# 安装主题
+npm i @uiw/codemirror-theme-bespin @uiw/codemirror-theme-gruvbox-dark
+```
+
+我们希望每个编辑器组件上方为工具栏，包括美化按钮、切换主题下拉框，下方为编辑器。因此代码组织上，切换主题的下拉框和编辑器就是公共部分，可以抽离为 [src/popup/mock-response/CodeMirror.tsx](https://github.com/Hans774882968/hans-reres/blob/main/src/popup/mock-response/CodeMirror.tsx) 。另外，我们希望每种语言的编辑器组件都包含“data协议数据量校验”，所以这段代码相关的规则对象，和`Form.Item`都应该包含在`CodeMirror.tsx`中。
+
+1. `CodeMirror.tsx`是一个常规的`<Form.Item label={$gt('Value')} name="value" rules={finalResponseValueRule} valuePropName="code">`，`CodeMirrorInner`是`Form.Item`下的一个自定义表单组件。这里我们约定了自定义表单组件的`value, onChange`属性名为`code, onChange`，这分别对应了`interface InnerProps`的`code, onChange`属性。
+2. `react-codemirror`的编程语言和主题插件的类型为`Extension`，基于“鸭子类型”自己定义一下：
+
+```ts
+type MockExtension = {
+  extension: MockExtension;
+} | readonly MockExtension[];
+```
+
+于是每个编辑器组件的代码都得到了简化，以JSON为例（ [传送门](https://github.com/Hans774882968/hans-reres/blob/main/src/popup/mock-response/JsonEditor.tsx) ）：
+
+```tsx
+const JsonEditor: React.FC<Props> = (props) => {
+  return (
+    <CodeMirror
+      lang={ResponseType.JSON}
+      beautifyHandler={beautifyJSONBtnHandler}
+      responseValueRule={responseValueRule}
+    >
+      <Button onClick={beautifyJSONBtnHandler}>
+        {$gt('Beautify {{language}}', { language: ResponseType.JSON })}
+      </Button>
+    </CodeMirror>
+  );
+};
+```
+
+### Mock Response功能：代码编辑器：按快捷键格式化代码
+
+来给编辑器加一个功能：按快捷键`ctrl+s(Windows), command+s(MAC)`自动格式化代码。既然按键与平台有关，那么首先应该封装一系列获取用户平台信息的函数： [传送门](https://github.com/Hans774882968/hans-reres/blob/main/src/get-platform.ts) 。
+
+```tsx
+export enum OS {
+  MAC = 'Mac OS',
+  IOS = 'iOS',
+  WIN = 'Windows',
+  ANDROID = 'Android',
+  LINUX = 'Linux',
+  UNIX = 'Unix',
+  OTHER = 'Other'
+}
+
+// TODO：根据MDN，这种方式是不可靠的，但似乎没有其他办法……
+export function getPlatform (): OS {
+  const ua = navigator.userAgent;
+  if (ua.includes('Mac')) return OS.MAC;
+  if (ua.includes('X11')) return OS.UNIX;
+  if (ua.includes('Linux')) return OS.LINUX;
+  if (ua.includes('Windows')) return OS.WIN;
+  if (ua.includes('Android')) return OS.ANDROID;
+  if (ua.includes('iPhone') || ua.includes('iPad') || ua.includes('iPod')) return OS.IOS;
+  return OS.OTHER;
+}
+
+export function isWindows () {
+  return getPlatform() === OS.WIN;
+}
+
+export function isMac () {
+  return getPlatform() === OS.MAC;
+}
+```
+
+事件监听的伪代码如下（[CodeMirror.tsx](https://github.com/Hans774882968/hans-reres/blob/main/src/popup/mock-response/CodeMirror.tsx)）：
+
+```tsx
+import React, { KeyboardEvent } from 'react';
+import CodeMirrorReact from '@uiw/react-codemirror';
+export const CodeMirror: React.FC<Props> = (props) => {
+  // 其他内容省略...
+  // 快捷键 command+s 格式化
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (!((isWindows() && e.ctrlKey) || (isMac() && e.metaKey)) || e.code !== 'KeyS') return;
+    e.preventDefault();
+    // 如果没有传入 beautifyHandler 应保证不报错
+    beautifyHandler && beautifyHandler(code || '');
+  };
+
+  return (
+    <div onKeyDown={onKeyDown}>
+      {/* 省略编辑器元素 CodeMirrorReact 等 */}
+    </div>
+  )
+}
+```
+
+### Mock Response功能：代码编辑器：主题切换
+
+`CodeMirror.tsx`编辑器主题切换：因为本项目已经可以切换主题，并且方案与Code Mirror的主题不兼容，为了方便，我们只选择了暗色主题。
+
+定义`themesMap`：
+
+```ts
+import { bespin } from '@uiw/codemirror-theme-bespin';
+import { githubDark } from '@uiw/codemirror-theme-github';
+import { gruvboxDark } from '@uiw/codemirror-theme-gruvbox-dark';
+
+type supportedTheme = 'bespin' | 'gruvboxDark' | 'githubDark';
+
+const themesMap: Record<supportedTheme, MockExtension> = {
+  bespin,
+  githubDark,
+  gruvboxDark
+};
+```
+
+组件内相关伪代码：
+
+```tsx
+const editorThemeOptions: Array<{ label: string, value: supportedTheme }> = [
+  { label: 'bespin', value: 'bespin' },
+  { label: 'gruvbox-dark', value: 'gruvboxDark' },
+  { label: 'github-dark', value: 'githubDark' }
+];
+const preferResponseEditorTheme = 'preferResponseEditorTheme';
+const CodeMirror: React.FC<Props> = (props) => {
+  const [currentEditorTheme, setCurrentEditorTheme] = useLocalStorageState<supportedTheme>(
+    preferResponseEditorTheme, { defaultValue: 'bespin' }
+  );
+  return (
+    <div>
+      <div>
+        <div>
+          {props.children}
+          {/* 期望特性：dialog的编辑器主题和表单的编辑器主题会联动 */}
+          <Select
+            placeholder={$gt('Please select')}
+            value={currentEditorTheme}
+            options={editorThemeOptions}
+            onChange={setCurrentEditorTheme}
+          />
+        </div>
+      </div>
+      <CodeMirrorReact maxHeight="300px" theme={themesMap[currentEditorTheme]} />
+    </div>
+  );
+};
+```
+
+### Mock Response功能：data协议大小限制
+
+虽然本项目的插件的`localStorage`存储数据量无限制，但Chrome对data协议传输的数据量有2MB的限制。我们只能为用户添加简单的提示。
+
+（1）需要为包含编辑器的表单字段添加数据量的校验。[CodeMirror.tsx](https://github.com/Hans774882968/hans-reres/blob/main/src/popup/mock-response/CodeMirror.tsx) 相关代码如下：
+
+```tsx
+const CodeMirror: React.FC<Props> = (props) => {
+  const { responseValueRule, lang, children, beautifyHandler } = props;
+  const { addRuleForm } = useAddRuleFormContext()!;
+  const requestRuleDataTypeFieldValue = Form.useWatch('dataType', addRuleForm);
+  const dataLengthTooLargeMessage = $gt('The length of the data protocol URL should meet the limit of the Chrome');
+  const finalResponseValueRule = [
+    ...(responseValueRule || []),
+    {
+      validator (rule: object, value: string) {
+        const len = getByteLength(getMockResponseData(value, requestRuleDataTypeFieldValue));
+        if (len > CHROME_DATA_LENGTH_LIMIT) return Promise.reject(`${dataLengthTooLargeMessage} (${len} bytes / 2MB).`);
+        return Promise.resolve();
+      }
+    }
+  ];
+  return (
+    <Form.Item
+      label={$gt('Value')}
+      name="value"
+      rules={finalResponseValueRule}
+      valuePropName="code"
+    >
+      <CodeMirrorInner
+        lang={lang}
+        beautifyHandler={beautifyHandler}
+      >
+        {children}
+      </CodeMirrorInner>
+    </Form.Item>
+  );
+};
+```
+
+既然这个数据量校验规则是针对大数据量mock response的交互优化，那就必须考虑它对性能的影响。以JS为例：
+
+1. 若校验规则仅取`value.length`，则在有长行的情况下，卡顿较严重；在无长行的5MB数据的情况下无卡顿。
+
+2. 若校验规则取`getByteLength(getMockResponseData(value, requestRuleDataTypeFieldValue))`，则在有长行的情况下，卡顿较严重；在无长行的5MB数据的情况下有一定的卡顿。
+
+综上，校验规则时间复杂度为`O(n)`的情况下，造成的性能影响可接受。
+
+（2）`background.js`需要添加warning。
 
 ### 请求头、响应头的处理
 

@@ -45,6 +45,7 @@ export default {
   'Select action': 'Select action',
   'Select language': 'Select language',
   Submit: 'Submit',
+  'The length of the data protocol URL should meet the limit of the Chrome': 'The length of the data protocol URL should meet the limit of the Chrome',
   Value: 'Value',
   'You should choose an action': 'You should choose an action'
 };
