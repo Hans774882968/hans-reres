@@ -6,18 +6,18 @@ import {
   flatRuleInitialValue,
   transformIntoRequestMappingRule
 } from '@/action-types';
-import { PopupContext } from './PopupApp';
 import {
   getRedirectType,
   isSubSequence
 } from '@/utils';
 import { useAddRuleFormContext } from './AddRuleFormContext';
+import { useGlobalDataContext } from './GlobalDataContext';
 import Button from 'antd/es/button';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
 import MockResponseEditor from './mock-response/MockResponseEditor';
 import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined';
-import React, { ReactNode, useContext } from 'react';
+import React, { ReactNode } from 'react';
 import Select from 'antd/es/select';
 import Switch from 'antd/es/switch';
 import Tooltip from 'antd/es/tooltip';
@@ -54,7 +54,7 @@ function getActionOptions () {
 }
 
 const AddRuleForm: React.FC<Props> = (props) => {
-  const { hansReResMap, setHansReResMap, bg } = useContext(PopupContext)!;
+  const { hansReResMap, setHansReResMap, bg } = useGlobalDataContext()!;
   const { addRuleForm } = useAddRuleFormContext()!;
 
   const initialRule: FlatRequestMappingRule = props.ruleToEdit || flatRuleInitialValue;

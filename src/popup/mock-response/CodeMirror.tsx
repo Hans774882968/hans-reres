@@ -2,21 +2,24 @@ import { $gt } from '@/i18n/i18n-init';
 import { CHROME_DATA_LENGTH_LIMIT, getByteLength, getMockResponseData, isSubSequence } from '@/utils';
 import { ResponseType } from '@/action-types';
 import { Rule } from 'rc-field-form/lib/interface';
+import { ThemeClassNamePrefix, useThemeContext } from '../ThemeContext';
 import { bespin } from '@uiw/codemirror-theme-bespin';
 import { css } from '@codemirror/lang-css';
-import { githubDark } from '@uiw/codemirror-theme-github';
-import { gruvboxDark } from '@uiw/codemirror-theme-gruvbox-dark';
+import { githubDark, githubLight } from '@uiw/codemirror-theme-github';
+import { gruvboxDark, gruvboxLight } from '@uiw/codemirror-theme-gruvbox-dark';
 import { html } from '@codemirror/lang-html';
 import { isMac, isWindows } from '@/get-platform';
 import { javascript } from '@codemirror/lang-javascript';
 import { json } from '@codemirror/lang-json';
+import { solarizedDark, solarizedLight } from '@uiw/codemirror-theme-solarized';
 import { useAddRuleFormContext } from '../AddRuleFormContext';
 import { xml } from '@codemirror/lang-xml';
 import Button from 'antd/es/button';
 import CodeMirrorReact from '@uiw/react-codemirror';
 import Form from 'antd/es/form';
-import React, { KeyboardEvent } from 'react';
+import React, { KeyboardEvent, useEffect } from 'react';
 import Select from 'antd/es/select';
+import humps from 'humps';
 import styles from './CodeMirror.module.less';
 import useLocalStorageState from '@/hooks/useLocalStorageState';
 
@@ -40,18 +43,30 @@ const extensionsMap: Record<ResponseType, MockExtension[]> = {
   [ResponseType.OTHER]: []
 };
 
-type supportedTheme = 'bespin' | 'gruvboxDark' | 'githubDark';
+type supportedTheme = 'bespin' | 'gruvboxDark' | 'gruvboxLight' |
+  'githubDark' | 'githubLight' | 'solarizedDark' | 'solarizedLight';
 
 const themesMap: Record<supportedTheme, MockExtension> = {
   bespin,
   githubDark,
-  gruvboxDark
+  githubLight,
+  gruvboxDark,
+  gruvboxLight,
+  solarizedDark,
+  solarizedLight
 };
-const editorThemeOptions: Array<{ label: string, value: supportedTheme }> = [
-  { label: 'bespin', value: 'bespin' },
-  { label: 'gruvbox-dark', value: 'gruvboxDark' },
-  { label: 'github-dark', value: 'githubDark' }
-];
+const editorThemeMap: Record<ThemeClassNamePrefix, Array<supportedTheme>> = {
+  [ThemeClassNamePrefix.DARK]: ['bespin', 'gruvboxDark', 'githubDark', 'solarizedDark'],
+  [ThemeClassNamePrefix.DEFAULT]: ['gruvboxLight', 'githubLight', 'solarizedLight']
+};
+const editorThemeOptionsMap: Record<ThemeClassNamePrefix, Array<{ label: string, value: supportedTheme }>> = {
+  [ThemeClassNamePrefix.DARK]: editorThemeMap[ThemeClassNamePrefix.DARK].map((item) => ({ label: humps.decamelize(item, { separator: '-' }), value: item })),
+  [ThemeClassNamePrefix.DEFAULT]: editorThemeMap[ThemeClassNamePrefix.DEFAULT].map((item) => ({ label: humps.decamelize(item, { separator: '-' }), value: item }))
+};
+const themeClassName2defaultEditorTheme: Record<ThemeClassNamePrefix, supportedTheme> = {
+  [ThemeClassNamePrefix.DARK]: 'githubDark',
+  [ThemeClassNamePrefix.DEFAULT]: 'gruvboxLight'
+};
 
 const preferResponseEditorTheme = 'preferResponseEditorTheme';
 
@@ -66,8 +81,10 @@ interface InnerProps {
 const CodeMirrorInner: React.FC<InnerProps> = (props) => {
   const { code, onChange, lang, beautifyHandler } = props;
   const { addRuleForm } = useAddRuleFormContext()!;
+  const { curClassNamePrefix } = useThemeContext()!;
+  const editorThemeDefault = themeClassName2defaultEditorTheme[curClassNamePrefix];
   const [currentEditorTheme, setCurrentEditorTheme] = useLocalStorageState<supportedTheme>(
-    preferResponseEditorTheme, { defaultValue: 'bespin' }
+    preferResponseEditorTheme, { defaultValue: editorThemeDefault }
   );
 
   const onCodeChange = (newCode: string) => {
@@ -87,6 +104,11 @@ const CodeMirrorInner: React.FC<InnerProps> = (props) => {
     beauty();
   };
 
+  useEffect(() => {
+    if (editorThemeMap[curClassNamePrefix].includes(currentEditorTheme)) return;
+    setCurrentEditorTheme(editorThemeDefault);
+  }, [curClassNamePrefix]);
+
   return (
     <div onKeyDown={onKeyDown}>
       <div className={styles.toolbarContainer}>
@@ -94,11 +116,11 @@ const CodeMirrorInner: React.FC<InnerProps> = (props) => {
           <Button onClick={onBeautyBtnClick}>
             {$gt('Beautify {{language}}', { language: lang })}
           </Button>
-          {/* 期望特性：dialog的编辑器主题和表单的编辑器主题会联动 */}
+          {/* 期望特性：dialog的编辑器主题和添加规则表单的编辑器主题能联动 */}
           <Select
             placeholder={$gt('Please select')}
             value={currentEditorTheme}
-            options={editorThemeOptions}
+            options={editorThemeOptionsMap[curClassNamePrefix]}
             onChange={setCurrentEditorTheme}
             showSearch={true}
             optionFilterProp="children"
@@ -108,7 +130,7 @@ const CodeMirrorInner: React.FC<InnerProps> = (props) => {
       </div>
 
       <CodeMirrorReact
-        maxHeight="300px"
+        maxHeight="400px"
         theme={themesMap[currentEditorTheme]}
         value={code}
         extensions={extensionsMap[lang]}

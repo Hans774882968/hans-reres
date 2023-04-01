@@ -1,17 +1,18 @@
 import { $gt } from '@/i18n/i18n-init';
-import { PopupContext, ThemeContext } from './PopupApp';
 import { RequestMappingRule, RewriteType, actionDefaultResultValueMap } from '../action-types';
+import { useGlobalDataContext } from './GlobalDataContext';
+import { useThemeContext } from './ThemeContext';
 import Button from 'antd/es/button';
 import Checkbox from 'antd/es/checkbox';
 import EditRuleForm from './EditRuleForm';
 import List from 'antd/es/list';
-import React, { MouseEvent, useContext, useState } from 'react';
+import React, { MouseEvent, useState } from 'react';
 import message from 'antd/es/message';
 import styles from './RuleList.module.less';
 
 const RuleList: React.FC = () => {
-  const { hansReResMap, setHansReResMap } = useContext(PopupContext)!;
-  const { curClassNamePrefix } = useContext(ThemeContext)!;
+  const { hansReResMap, setHansReResMap } = useGlobalDataContext()!;
+  const { curClassNamePrefix } = useThemeContext()!;
   const [isDialogVisible, setDialogVisible] = useState(false);
   const [requestRuleToEdit, setRequestRuleToEdit] = useState<RequestMappingRule>({
     action: {

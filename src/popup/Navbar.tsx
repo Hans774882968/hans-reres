@@ -1,6 +1,6 @@
-import { ThemeContext } from './PopupApp';
+import { useThemeContext } from './ThemeContext';
 import Col from 'antd/es/col';
-import React, { useContext } from 'react';
+import React from 'react';
 import Row from 'antd/es/row';
 import Select from 'antd/es/select';
 import Switch from 'antd/es/switch';
@@ -9,7 +9,7 @@ import icon48 from '../assets/icon48.png';
 import styles from './Navbar.module.less';
 
 const Navbar: React.FC = () => {
-  const { curClassNamePrefix, preferDarkTheme, setPreferDarkTheme } = useContext(ThemeContext)!;
+  const { curClassNamePrefix, preferDarkTheme, setPreferDarkTheme } = useThemeContext()!;
   const changeLang = (langValue: string) => {
     i18n.changeLanguage(langValue);
   };

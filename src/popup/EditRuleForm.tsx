@@ -6,10 +6,10 @@ import {
   transformIntoFlatRequestMappingRule,
   transformIntoRequestMappingRule
 } from '@/action-types';
-import { PopupContext } from './PopupApp';
+import { useGlobalDataContext } from './GlobalDataContext';
 import AddRuleForm from './AddRuleForm';
 import Modal from 'antd/es/modal';
-import React, { useContext } from 'react';
+import React from 'react';
 import message from 'antd/es/message';
 
 interface Props {
@@ -23,7 +23,7 @@ const ANT_MODAL_CONTENT_PADDING = 24;
 const EDIT_FORM_WIDTH = EDIT_DIALOG_WIDTH - 2 * ANT_MODAL_CONTENT_PADDING;
 
 const EditRuleForm: React.FC<Props> = (props) => {
-  const { hansReResMap, setHansReResMap } = useContext(PopupContext)!;
+  const { hansReResMap, setHansReResMap } = useGlobalDataContext()!;
   const { visible, requestRule, setDialogVisible } = props;
   const flatRequestRule = transformIntoFlatRequestMappingRule(requestRule);
   const editSuccessMessage = $gt('Edit Success❤');
