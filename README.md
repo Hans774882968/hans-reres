@@ -1386,15 +1386,13 @@ export const CodeMirror: React.FC<Props> = (props) => {
 
 ### Mock Response功能：代码编辑器：主题切换
 
-`CodeMirror.tsx`编辑器主题切换：因为本项目已经可以切换主题，并且方案与Code Mirror的主题不兼容，为了方便，我们只选择了暗色主题。
-
-定义`themesMap`：
+`CodeMirror.tsx`编辑器主题切换：首先定义`themesMap`：
 
 ```ts
 import { bespin } from '@uiw/codemirror-theme-bespin';
 import { githubDark } from '@uiw/codemirror-theme-github';
 import { gruvboxDark } from '@uiw/codemirror-theme-gruvbox-dark';
-
+// 都是暗色主题
 type supportedTheme = 'bespin' | 'gruvboxDark' | 'githubDark';
 
 const themesMap: Record<supportedTheme, MockExtension> = {
@@ -1404,7 +1402,7 @@ const themesMap: Record<supportedTheme, MockExtension> = {
 };
 ```
 
-组件内相关伪代码：
+然后看下组件内相关伪代码：
 
 ```tsx
 const editorThemeOptions: Array<{ label: string, value: supportedTheme }> = [
@@ -1422,7 +1420,7 @@ const CodeMirror: React.FC<Props> = (props) => {
       <div>
         <div>
           {props.children}
-          {/* 期望特性：dialog的编辑器主题和表单的编辑器主题会联动 */}
+          {/* 期望特性：dialog的编辑器主题和添加规则表单的编辑器主题能联动 */}
           <Select
             placeholder={$gt('Please select')}
             value={currentEditorTheme}
@@ -1431,11 +1429,63 @@ const CodeMirror: React.FC<Props> = (props) => {
           />
         </div>
       </div>
-      <CodeMirrorReact maxHeight="300px" theme={themesMap[currentEditorTheme]} />
+      <CodeMirrorReact maxHeight="400px" theme={themesMap[currentEditorTheme]} />
     </div>
   );
 };
 ```
+
+这就有了最基本的点击下拉框切换编辑器主题的功能。接下来，让编辑器的主题能随着全局主题的切换而切换。首先主题相关的数据要通过`Context`提供（ [相关代码：src/popup/ThemeContext.tsx](https://github.com/Hans774882968/hans-reres/blob/main/src/popup/ThemeContext.tsx) ），接着定义一些映射，描述某个全局主题可搭配的编辑器主题和某个全局主题对应的默认主题：
+
+```ts
+type supportedTheme = 'bespin' | 'gruvboxDark' | 'gruvboxLight' |
+  'githubDark' | 'githubLight' | 'solarizedDark' | 'solarizedLight';
+const themesMap: Record<supportedTheme, MockExtension> = {
+  bespin,
+  githubDark,
+  githubLight,
+  gruvboxDark,
+  gruvboxLight,
+  solarizedDark,
+  solarizedLight
+};
+const editorThemeMap: Record<ThemeClassNamePrefix, Array<supportedTheme>> = {
+  [ThemeClassNamePrefix.DARK]: ['bespin', 'gruvboxDark', 'githubDark', 'solarizedDark'],
+  [ThemeClassNamePrefix.DEFAULT]: ['gruvboxLight', 'githubLight', 'solarizedLight']
+};
+const editorThemeOptionsMap: Record<ThemeClassNamePrefix, Array<{ label: string, value: supportedTheme }>> = {
+  [ThemeClassNamePrefix.DARK]: editorThemeMap[ThemeClassNamePrefix.DARK].map((item) => ({ label: humps.decamelize(item, { separator: '-' }), value: item })),
+  [ThemeClassNamePrefix.DEFAULT]: editorThemeMap[ThemeClassNamePrefix.DEFAULT].map((item) => ({ label: humps.decamelize(item, { separator: '-' }), value: item }))
+};
+const themeClassName2defaultEditorTheme: Record<ThemeClassNamePrefix, supportedTheme> = {
+  [ThemeClassNamePrefix.DARK]: 'githubDark',
+  [ThemeClassNamePrefix.DEFAULT]: 'gruvboxLight'
+};
+```
+
+然后我们考虑一种**直接消费**`curClassNamePrefix`的写法：
+
+```ts
+// 纯函数
+function getActualCurrentEditorTheme (
+  curClassNamePrefix: ThemeClassNamePrefix,
+  currentEditorTheme: supportedTheme,
+  editorThemeDefault: supportedTheme
+) {
+  return editorThemeMap[curClassNamePrefix].includes(currentEditorTheme) ? currentEditorTheme : editorThemeDefault;
+}
+
+  // 组件内
+  // 传入 editorThemeDefault 不是必需的，只是希望少写几个单词
+  const editorThemeDefault = themeClassName2defaultEditorTheme[curClassNamePrefix];
+  const [currentEditorTheme, setCurrentEditorTheme] = useLocalStorageState<supportedTheme>(
+    preferResponseEditorTheme, { defaultValue: editorThemeDefault }
+  );
+  // 组件内获取 actualCurrentEditorTheme ，在组件的其他部分可直接消费。比如：<CodeMirrorReact theme={themesMap[actualCurrentEditorTheme]} />
+  const actualCurrentEditorTheme = getActualCurrentEditorTheme(curClassNamePrefix, currentEditorTheme, editorThemeDefault);
+```
+
+直接使用`useEffect`，在`curClassNamePrefix`变化时调用`setCurrentEditorTheme`同步编辑器主题到`localStorage`，当然也是可行的。但我还是采用了上述直接消费的写法。上述写法有一个性质：在切换全局主题时，`currentEditorTheme`是**滞后的**，于是会返回当前全局主题对应的编辑器主题。当且仅当在某次切换全局主题后再点击下拉框切换编辑器主题，`currentEditorTheme`才能得到更新。如果在全局主题切换后未点击下拉框就再次切换回来，则`currentEditorTheme`可以保持上次的选择，这个特性可以说是bug也可以说是feature，在此我认为这个特性是可接受的。
 
 ### Mock Response功能：data协议大小限制
 

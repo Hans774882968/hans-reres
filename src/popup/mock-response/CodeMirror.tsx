@@ -17,7 +17,7 @@ import { xml } from '@codemirror/lang-xml';
 import Button from 'antd/es/button';
 import CodeMirrorReact from '@uiw/react-codemirror';
 import Form from 'antd/es/form';
-import React, { KeyboardEvent, useEffect } from 'react';
+import React, { KeyboardEvent } from 'react';
 import Select from 'antd/es/select';
 import humps from 'humps';
 import styles from './CodeMirror.module.less';
@@ -68,6 +68,14 @@ const themeClassName2defaultEditorTheme: Record<ThemeClassNamePrefix, supportedT
   [ThemeClassNamePrefix.DEFAULT]: 'gruvboxLight'
 };
 
+function getActualCurrentEditorTheme (
+  curClassNamePrefix: ThemeClassNamePrefix,
+  currentEditorTheme: supportedTheme,
+  editorThemeDefault: supportedTheme
+) {
+  return editorThemeMap[curClassNamePrefix].includes(currentEditorTheme) ? currentEditorTheme : editorThemeDefault;
+}
+
 const preferResponseEditorTheme = 'preferResponseEditorTheme';
 
 interface InnerProps {
@@ -104,10 +112,7 @@ const CodeMirrorInner: React.FC<InnerProps> = (props) => {
     beauty();
   };
 
-  useEffect(() => {
-    if (editorThemeMap[curClassNamePrefix].includes(currentEditorTheme)) return;
-    setCurrentEditorTheme(editorThemeDefault);
-  }, [curClassNamePrefix]);
+  const actualCurrentEditorTheme = getActualCurrentEditorTheme(curClassNamePrefix, currentEditorTheme, editorThemeDefault);
 
   return (
     <div onKeyDown={onKeyDown}>
@@ -119,7 +124,7 @@ const CodeMirrorInner: React.FC<InnerProps> = (props) => {
           {/* 期望特性：dialog的编辑器主题和添加规则表单的编辑器主题能联动 */}
           <Select
             placeholder={$gt('Please select')}
-            value={currentEditorTheme}
+            value={actualCurrentEditorTheme}
             options={editorThemeOptionsMap[curClassNamePrefix]}
             onChange={setCurrentEditorTheme}
             showSearch={true}
@@ -131,7 +136,7 @@ const CodeMirrorInner: React.FC<InnerProps> = (props) => {
 
       <CodeMirrorReact
         maxHeight="400px"
-        theme={themesMap[currentEditorTheme]}
+        theme={themesMap[actualCurrentEditorTheme]}
         value={code}
         extensions={extensionsMap[lang]}
         onChange={onCodeChange}
