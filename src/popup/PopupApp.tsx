@@ -5,6 +5,7 @@ import AddRuleForm from './AddRuleForm';
 import Layout from 'antd/es/layout';
 import Navbar from './Navbar';
 import React, { KeyboardEvent } from 'react';
+import RuleGroupCard from './RuleGroupCard';
 import RuleList from './RuleList';
 import styles from './PopupApp.module.less';
 
@@ -24,7 +25,14 @@ const PopupApp: React.FC = () => {
             <AddRuleFormProvider>
               <AddRuleForm ruleToEdit={null} showClearStorageBtn={true} />
             </AddRuleFormProvider>
-            <RuleList />
+            <div className={styles.ruleListContainer}>
+              <div className={styles.ruleGroupCardContainer}>
+                <RuleGroupCard />
+              </div>
+              <div className={styles.ruleListComponentContainer}>
+                <RuleList />
+              </div>
+            </div>
           </div>
         </Layout>
       </GlobalDataProvider>

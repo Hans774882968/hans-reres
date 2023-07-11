@@ -35,6 +35,7 @@ import isValidJson from './is-valid-json';
 import xhr from './xhr';
 
 export const hansReResMapName = 'hansReResMap';
+export const ruleGroupsName = 'reresRuleGroups';
 
 export const getRedirectType = (res: string) => {
   if (!res) return 'unknown';

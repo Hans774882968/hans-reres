@@ -1,12 +1,14 @@
-import { RequestMappingRule } from '@/action-types';
-import { hansReResMapName } from '@/utils';
+import { RequestMappingRule, RuleGroup } from '@/action-types';
+import { hansReResMapName, ruleGroupsName } from '@/utils';
 import React, { ReactNode, createContext, useContext } from 'react';
 import useLocalStorageState from '@/hooks/useLocalStorageState';
 
 type ContextType = {
   hansReResMap: RequestMappingRule[],
   setHansReResMap: (rules: RequestMappingRule[]) => void,
-  bg: Window | null
+  reresRuleGroups: Array<RuleGroup>,
+  setReresRuleGroups: (ruleGroups: Array<RuleGroup>) => void,
+  bg: Window | null,
   bgWindow: Window
 } | null;
 
@@ -28,6 +30,13 @@ export const GlobalDataProvider: React.FC<Props> = (props) => {
       localStorageSource: bgWindow
     }
   );
+  const [reresRuleGroups, setReresRuleGroups] = useLocalStorageState<Array<RuleGroup>>(
+    ruleGroupsName,
+    {
+      defaultValue: [],
+      localStorageSource: bgWindow
+    }
+  );
 
   return (
     <GlobalDataContext.Provider
@@ -35,7 +44,9 @@ export const GlobalDataProvider: React.FC<Props> = (props) => {
         bg,
         bgWindow,
         hansReResMap,
-        setHansReResMap
+        reresRuleGroups,
+        setHansReResMap,
+        setReresRuleGroups
       }}
     >
       {children}

@@ -8,7 +8,23 @@
 
   .popupBodyContainer {
     // antd 自带 box-sizing: border-box
-    padding: @popup-body-padding;
+    padding: @popup-body-padding 0;
     min-width: @app-min-width;
+
+    .ruleListContainer {
+      display: flex;
+
+      .ruleGroupCardContainer {
+        flex: 1;
+        max-width: 200px;
+      }
+
+      .ruleListComponentContainer {
+        @rule-list-component-container-padding: 10px;
+
+        flex: 3;
+        padding: 0 @rule-list-component-container-padding;
+      }
+    }
   }
 }

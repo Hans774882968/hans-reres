@@ -15,6 +15,12 @@ export enum RewriteType {
   DELETE_RESP_HEADER = 'Delete Resp Header',
 }
 
+export interface RuleGroup {
+  name: string
+  description: string
+  enabled: boolean
+}
+
 export interface RequestMappingRule {
   req: string
   action: Action
